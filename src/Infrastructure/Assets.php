@@ -22,7 +22,9 @@ final class Assets implements Service {
 		}
 		wp_enqueue_style( 'wp-builder' );
 		wp_enqueue_style( 'wp-builder-editor', WPB_URL . 'assets/css/editor.css', array(), WPB_VERSION );
-		wp_enqueue_script( 'wp-builder-editor', WPB_URL . 'assets/js/editor.js', array( 'wp-api-fetch', 'wp-i18n' ), WPB_VERSION, true );
+		wp_enqueue_style( 'wp-builder-editor-upgrades', WPB_URL . 'assets/css/editor-upgrades.css', array( 'wp-builder-editor' ), WPB_VERSION );
+		wp_enqueue_media( array( 'post' => $post_id ) );
+		wp_enqueue_script( 'wp-builder-editor', WPB_URL . 'assets/js/editor.js', array( 'wp-api-fetch', 'wp-i18n', 'media-editor' ), WPB_VERSION, true );
 		$this->configuration( $post_id );
 	}
 
