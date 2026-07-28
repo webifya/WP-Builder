@@ -26,11 +26,18 @@ The feature catalog is a product program, not a single release. Shipping order i
 - Portable page import/export with format validation
 - Revision browser and secure restoration
 
-## 0.4 — Templates and release hardening
+## 0.4 — Layout, widgets and reusable templates (completed)
 
-- Complete free widgets and interaction scripts
-- Flex/grid control UI, responsive inheritance and semantic markup
-- Server-side saved sections/pages and template library
+- Server-side saved page templates with insert/delete workflows
+- Accessible tabs, accordion and toggle widgets
+- Flex/grid controls and nested drag targets
+- Document byte/node limits and Media Library compatibility fixes
+- WordPress 7.0 compatibility metadata
+
+## 0.5 — Release hardening
+
+- Complete remaining free widgets and interaction scripts
+- Responsive inheritance and semantic markup audit
 - PHPUnit, Playwright, PHPStan, ESLint, PHPCS and compatibility matrix
 - Performance budgets, accessibility audit, localization and WordPress.org packaging
 
