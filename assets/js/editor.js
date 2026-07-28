@@ -7,12 +7,14 @@
 	}
 
 	var TYPES = [
-		['section', 'Section'], ['container', 'Container'], ['row', 'Row'], ['column', 'Column'],
+		['section', 'Section'], ['container', 'Container'], ['row', 'Row'], ['column', 'Column'], ['inner-container', 'Inner Container'],
 		['heading', 'Heading'], ['text', 'Text'], ['button', 'Button'], ['image', 'Image'],
+		['icon', 'Icon'], ['icon-box', 'Icon Box'], ['gallery', 'Gallery'],
 		['list', 'List'], ['video', 'Video'], ['audio', 'Audio'], ['alert', 'Alert'],
 		['progress', 'Progress'], ['spacer', 'Spacer'], ['divider', 'Divider'],
 		['accordion', 'Accordion'], ['tabs', 'Tabs'], ['toggle', 'Toggle'],
-		['icon', 'Icon'], ['html', 'HTML'], ['shortcode', 'Shortcode']
+		['counter', 'Counter'], ['rating', 'Star Rating'], ['social-icons', 'Social Icons'],
+		['html', 'HTML'], ['shortcode', 'Shortcode']
 	];
 	var CONTAINERS = ['section', 'container', 'row', 'column', 'inner-container'];
 	var state = {
@@ -47,6 +49,11 @@
 		else if (type === 'list') props = { text: 'First item\nSecond item\nThird item' };
 		else if (type === 'alert') props = { text: 'Important information' };
 		else if (type === 'progress') props = { value: 60 };
+		else if (type === 'counter') props = { value: 100, suffix: '+' };
+		else if (type === 'rating') props = { value: 5, max: 5 };
+		else if (type === 'icon-box') props = { icon: '★', title: 'Icon box', text: 'Describe this feature.' };
+		else if (type === 'gallery') props = { urls: '' };
+		else if (type === 'social-icons') props = { links: 'Website | https://example.com' };
 		else if (type === 'accordion' || type === 'tabs') props = {
 			items: [
 				{ title: 'First item', content: 'First item content.' },
@@ -687,6 +694,21 @@
 			}, 'wpb-ui-button wpb-wide'));
 		}
 		if (element.type === 'progress') prop('value', 'Value (0–100)', 'number');
+		if (element.type === 'counter') {
+			prop('value', 'Value', 'number');
+			prop('suffix', 'Suffix', 'text');
+		}
+		if (element.type === 'rating') {
+			prop('value', 'Rating', 'number');
+			prop('max', 'Maximum', 'number');
+		}
+		if (element.type === 'icon-box') {
+			prop('icon', 'Icon or symbol', 'text');
+			prop('title', 'Title', 'text');
+			prop('text', 'Content', 'textarea');
+		}
+		if (element.type === 'gallery') prop('urls', 'Image URLs · one per line', 'textarea');
+		if (element.type === 'social-icons') prop('links', 'Links · “Label | URL” per line', 'textarea');
 		if (element.type === 'toggle') {
 			prop('title', 'Title', 'text');
 			prop('text', 'Content', 'textarea');
