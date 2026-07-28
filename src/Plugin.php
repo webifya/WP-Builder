@@ -20,6 +20,7 @@ final class Plugin {
 
 	private function __construct() {
 		$services = array(
+			new Infrastructure\Meta(),
 			new Infrastructure\Assets(),
 			new Infrastructure\RestController(),
 			new Infrastructure\Editor(),
