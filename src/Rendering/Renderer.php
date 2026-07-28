@@ -131,9 +131,37 @@ final class Renderer implements Service {
 					$html .= '</div>';
 					break;
 				case 'counter':
+					$html .= '<span class="' . esc_attr( $class ) . '"' . $style . '><span class="wpb-counter-value">' . esc_html( $props['value'] ?? 0 ) . '</span>' . esc_html( $props['suffix'] ?? '' ) . '</span>';
+					break;
 				case 'rating':
+					$value = min( 10, max( 0, (float) ( $props['value'] ?? 0 ) ) );
+					$max   = min( 10, max( 1, absint( $props['max'] ?? 5 ) ) );
+					$html .= sprintf( '<meter class="%s" min="0" max="%d" value="%s"%s aria-label="%s">%s/%d</meter>', esc_attr( $class ), $max, esc_attr( $value ), $style, esc_attr( sprintf( __( '%1$s out of %2$d stars', 'wp-builder' ), $value, $max ) ), esc_html( $value ), $max );
+					break;
 				case 'icon':
 					$html .= '<div class="' . esc_attr( $class ) . '"' . $style . '>' . esc_html( $props['text'] ) . '</div>';
+					break;
+				case 'icon-box':
+					$html .= '<div class="' . esc_attr( $class ) . '"' . $style . '><span aria-hidden="true">' . esc_html( $props['icon'] ?? '' ) . '</span><h3>' . esc_html( $props['title'] ?? '' ) . '</h3><div>' . wp_kses_post( $props['text'] ) . '</div></div>';
+					break;
+				case 'gallery':
+					$html .= '<div class="' . esc_attr( $class ) . '"' . $style . '>';
+					foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $props['urls'] ?? '' ) ) as $url ) {
+						if ( $url ) {
+							$html .= '<img src="' . esc_url( trim( $url ) ) . '" alt="" loading="lazy">';
+						}
+					}
+					$html .= '</div>';
+					break;
+				case 'social-icons':
+					$html .= '<nav class="' . esc_attr( $class ) . '" aria-label="' . esc_attr__( 'Social links', 'wp-builder' ) . '"' . $style . '>';
+					foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $props['links'] ?? '' ) ) as $link ) {
+						$parts = array_map( 'trim', explode( '|', $link, 2 ) );
+						if ( ! empty( $parts[1] ) ) {
+							$html .= '<a href="' . esc_url( $parts[1] ) . '" rel="noopener noreferrer">' . esc_html( $parts[0] ?: $parts[1] ) . '</a>';
+						}
+					}
+					$html .= '</nav>';
 					break;
 				case 'shortcode':
 					$html .= '<div class="' . esc_attr( $class ) . '">' . do_shortcode( sanitize_text_field( $props['code'] ?? '' ) ) . '</div>';
