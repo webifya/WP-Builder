@@ -11,8 +11,23 @@ final class Meta implements Service {
 	}
 
 	public function register_meta(): void {
+		register_post_type(
+			'wpb_template',
+			array(
+				'labels'       => array(
+					'name'          => __( 'Builder Templates', 'wp-builder' ),
+					'singular_name' => __( 'Builder Template', 'wp-builder' ),
+				),
+				'public'       => false,
+				'show_ui'      => true,
+				'show_in_menu' => 'tools.php',
+				'supports'     => array( 'title', 'author' ),
+				'map_meta_cap' => true,
+				'capability_type' => 'post',
+			)
+		);
 		foreach ( get_post_types( array( 'show_ui' => true ) ) as $post_type ) {
-			if ( ! post_type_supports( $post_type, 'editor' ) ) {
+			if ( 'wpb_template' === $post_type || ! post_type_supports( $post_type, 'editor' ) ) {
 				continue;
 			}
 			register_post_meta(
