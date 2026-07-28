@@ -11,6 +11,7 @@
 		['heading', 'Heading'], ['text', 'Text'], ['button', 'Button'], ['image', 'Image'],
 		['list', 'List'], ['video', 'Video'], ['audio', 'Audio'], ['alert', 'Alert'],
 		['progress', 'Progress'], ['spacer', 'Spacer'], ['divider', 'Divider'],
+		['accordion', 'Accordion'], ['tabs', 'Tabs'], ['toggle', 'Toggle'],
 		['icon', 'Icon'], ['html', 'HTML'], ['shortcode', 'Shortcode']
 	];
 	var CONTAINERS = ['section', 'container', 'row', 'column', 'inner-container'];
@@ -46,6 +47,13 @@
 		else if (type === 'list') props = { text: 'First item\nSecond item\nThird item' };
 		else if (type === 'alert') props = { text: 'Important information' };
 		else if (type === 'progress') props = { value: 60 };
+		else if (type === 'accordion' || type === 'tabs') props = {
+			items: [
+				{ title: 'First item', content: 'First item content.' },
+				{ title: 'Second item', content: 'Second item content.' }
+			]
+		};
+		else if (type === 'toggle') props = { title: 'More information', text: 'Toggle content.' };
 		else if (type === 'spacer') props = { text: '' };
 		else if (type === 'icon') props = { text: '★' };
 		else if (type === 'html') props = { html: '<p>Custom HTML</p>' };
@@ -168,17 +176,30 @@
 
 	function move(sourceId, targetId) {
 		if (!sourceId || !targetId || sourceId === targetId) return;
-		var source;
+		var source, sourceSiblings, sourceIndex, target;
 		walk(state.document.elements, sourceId, function (element, siblings, index) {
 			source = element;
-			siblings.splice(index, 1);
+			sourceSiblings = siblings;
+			sourceIndex = index;
 		});
-		if (!source) return;
+		walk(state.document.elements, targetId, function (element) { target = element; });
+		if (!source || !target || containsElement(source, targetId)) return;
+		sourceSiblings.splice(sourceIndex, 1);
+		if (CONTAINERS.indexOf(target.type) >= 0) {
+			target.children = target.children || [];
+			target.children.push(source);
+			return;
+		}
 		var inserted = walk(state.document.elements, targetId, function (target, siblings, index) {
 			siblings.splice(index, 0, source);
 			return true;
 		});
 		if (!inserted) state.document.elements.push(source);
+	}
+
+	function containsElement(element, targetId) {
+		if (element.id === targetId) return true;
+		return (element.children || []).some(function (child) { return containsElement(child, targetId); });
 	}
 
 	function scheduleRecovery() {
@@ -320,6 +341,66 @@
 		});
 	}
 
+	function saveToLibrary() {
+		var name = window.prompt('Template name');
+		if (!name || !name.trim()) return;
+		updateStatus('Saving template…');
+		wp.apiFetch({
+			path: '/wp-builder/v1/templates',
+			method: 'POST',
+			data: { name: name.trim(), document: state.document }
+		}).then(function () {
+			updateStatus('Template saved');
+			showTemplates();
+		}).catch(function (error) {
+			updateStatus(error && error.message ? error.message : 'Template save failed');
+		});
+	}
+
+	function showTemplates() {
+		inspector.hidden = false;
+		navigator.hidden = true;
+		inspector.replaceChildren(el('h2', '', 'Template library'));
+		inspector.append(button('Save current page', saveToLibrary, 'wpb-ui-button wpb-primary wpb-wide'));
+		var list = el('div', 'wpb-template-list');
+		list.append(el('p', 'wpb-panel-empty', 'Loading templates…'));
+		inspector.append(list);
+		wp.apiFetch({ path: '/wp-builder/v1/templates' }).then(function (items) {
+			list.replaceChildren();
+			if (!items.length) {
+				list.append(el('p', 'wpb-panel-empty', 'No saved templates yet.'));
+				return;
+			}
+			items.forEach(function (template) {
+				var row = el('div', 'wpb-template');
+				var detail = el('div');
+				detail.append(el('strong', '', template.name), el('span', '', template.modified));
+				var actions = el('div', 'wpb-template-actions');
+				actions.append(button('Insert', function () {
+					wp.apiFetch({ path: '/wp-builder/v1/templates/' + template.id }).then(function (item) {
+						mutate(function () {
+							var imported = clone(item.document);
+							imported.elements.forEach(reidentify);
+							state.document.elements = state.document.elements.concat(imported.elements);
+							state.selected = null;
+						});
+						updateStatus('Template inserted · save to publish');
+					}).catch(function (error) {
+						updateStatus(error && error.message ? error.message : 'Template load failed');
+					});
+				}));
+				actions.append(button('Delete', function () {
+					if (!window.confirm('Permanently delete this saved template?')) return;
+					wp.apiFetch({ path: '/wp-builder/v1/templates/' + template.id, method: 'DELETE' }).then(showTemplates);
+				}, 'wpb-ui-button wpb-danger'));
+				row.append(detail, actions);
+				list.append(row);
+			});
+		}).catch(function (error) {
+			list.replaceChildren(el('p', 'wpb-panel-empty', error && error.message ? error.message : 'Could not load templates'));
+		});
+	}
+
 	function el(tag, className, text) {
 		var node = document.createElement(tag);
 		if (className) node.className = className;
@@ -365,6 +446,7 @@
 		});
 		var actions = shell.querySelector('.wpb-actions');
 		actions.append(button('Design', function () { state.selected = null; render(); }));
+		actions.append(button('Library', showTemplates));
 		actions.append(button('Revisions', showRevisions));
 		actions.append(button('Export', exportTemplate));
 		actions.append(button('Import', importTemplate));
@@ -453,6 +535,16 @@
 			progress.max = 100;
 			progress.value = Number(element.props.value || 0);
 			content.append(progress);
+		} else if (element.type === 'accordion' || element.type === 'tabs') {
+			(element.props.items || []).forEach(function (item) {
+				var preview = el('div', 'wpb-interactive-preview');
+				preview.append(el('strong', '', item.title || 'Item'), el('span', '', item.content || ''));
+				content.append(preview);
+			});
+		} else if (element.type === 'toggle') {
+			var toggle = el('div', 'wpb-interactive-preview');
+			toggle.append(el('strong', '', element.props.title || 'More information'), el('span', '', element.props.text || ''));
+			content.append(toggle);
 		} else if (element.props && (element.props.text || element.props.url || element.props.code)) {
 			content.append(el('div', '', element.props.text || element.props.url || element.props.code));
 		}
@@ -535,6 +627,22 @@
 		return wrap;
 	}
 
+	function itemsToText(items) {
+		return (items || []).map(function (item) {
+			return (item.title || '').replace(/\|/g, '/') + ' | ' + (item.content || '').replace(/\r?\n/g, ' ');
+		}).join('\n');
+	}
+
+	function textToItems(value) {
+		return value.split(/\r?\n/).filter(function (line) { return line.trim(); }).map(function (line) {
+			var split = line.indexOf('|');
+			return {
+				title: (split >= 0 ? line.slice(0, split) : line).trim(),
+				content: (split >= 0 ? line.slice(split + 1) : '').trim()
+			};
+		}).slice(0, 30);
+	}
+
 	function renderInspector() {
 		inspector.replaceChildren();
 		var element = selected();
@@ -579,6 +687,15 @@
 			}, 'wpb-ui-button wpb-wide'));
 		}
 		if (element.type === 'progress') prop('value', 'Value (0–100)', 'number');
+		if (element.type === 'toggle') {
+			prop('title', 'Title', 'text');
+			prop('text', 'Content', 'textarea');
+		}
+		if (element.type === 'accordion' || element.type === 'tabs') {
+			inspector.append(field('Items · one “Title | Content” per line', itemsToText(element.props.items), function (value) {
+				mutate(function () { element.props.items = textToItems(value); });
+			}, 'textarea'));
+		}
 		if (element.type === 'html') prop('html', 'HTML', 'textarea');
 		if (element.type === 'shortcode') prop('code', 'Shortcode', 'text');
 
@@ -589,7 +706,10 @@
 			['fontSize', 'Font size', 'text'], ['padding', 'Padding', 'text'],
 			['margin', 'Margin', 'text'], ['borderRadius', 'Radius', 'text'],
 			['width', 'Width', 'text'], ['minHeight', 'Minimum height', 'text'],
-			['textAlign', 'Text alignment', 'text'], ['gap', 'Gap', 'text']
+			['textAlign', 'Text alignment', 'text'], ['gap', 'Gap', 'text'],
+			['display', 'Layout mode (flex/grid)', 'text'], ['flexDirection', 'Flex direction', 'text'],
+			['flexWrap', 'Flex wrap', 'text'], ['justifyContent', 'Justify content', 'text'],
+			['alignItems', 'Align items', 'text'], ['gridTemplateColumns', 'Grid columns', 'text']
 		].forEach(function (setting) {
 			inspector.append(field(setting[1], styles[setting[0]] || '', function (value) {
 				mutate(function () {
