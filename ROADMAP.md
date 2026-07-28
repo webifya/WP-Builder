@@ -34,12 +34,18 @@ The feature catalog is a product program, not a single release. Shipping order i
 - Document byte/node limits and Media Library compatibility fixes
 - WordPress 7.0 compatibility metadata
 
-## 0.5 — Release hardening
+## 0.5 — Release hardening (completed)
 
-- Complete remaining free widgets and interaction scripts
-- Responsive inheritance and semantic markup audit
-- PHPUnit, Playwright, PHPStan, ESLint, PHPCS and compatibility matrix
-- Performance budgets, accessibility audit, localization and WordPress.org packaging
+- Completed initial Free widget editor/renderer coverage
+- Added semantic interactive output and keyboard tests
+- Added PHP 8.1–8.4 syntax CI and JavaScript browser tests
+- Added WordPress 7.0.2 Playground configuration and distribution exclusions
+
+## 0.6 — Production release candidate
+
+- Full installed end-to-end editor suite on classic and block themes
+- PHPCS, PHPStan, PHPUnit and Plugin Check with zero-error gates
+- Performance budgets, localization extraction and formal accessibility audit
 
 ## 1.0 — Stable free release
 
