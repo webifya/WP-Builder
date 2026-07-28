@@ -35,8 +35,6 @@ final class Assets implements Service {
 			return;
 		}
 		wp_enqueue_style( 'wp-builder-editor', WPB_URL . 'assets/css/editor.css', array(), WPB_VERSION );
-		wp_enqueue_script( 'wp-builder-editor', WPB_URL . 'assets/js/editor.js', array( 'wp-api-fetch', 'wp-element', 'wp-i18n' ), WPB_VERSION, true );
-		$this->configuration( get_the_ID() );
 	}
 
 	private function configuration( int $post_id ): void {
