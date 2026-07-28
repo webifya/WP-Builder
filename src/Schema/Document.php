@@ -20,8 +20,13 @@ final class Document {
 	}
 
 	public static function sanitize( array $document ) {
+		$encoded = wp_json_encode( $document );
+		if ( false === $encoded || strlen( $encoded ) > 2 * MB_IN_BYTES ) {
+			return new \WP_Error( 'wpb_document_too_large', __( 'The builder document exceeds the 2 MB limit.', 'wp-builder' ), array( 'status' => 413 ) );
+		}
 		$document = self::normalize( $document );
-		$elements = self::sanitize_elements( $document['elements'], 0 );
+		$total    = 0;
+		$elements = self::sanitize_elements( $document['elements'], 0, $total );
 		if ( is_wp_error( $elements ) ) {
 			return $elements;
 		}
@@ -30,16 +35,20 @@ final class Document {
 		return $document;
 	}
 
-	private static function sanitize_elements( array $elements, int $depth ) {
+	private static function sanitize_elements( array $elements, int $depth, int &$total ) {
 		if ( $depth > 12 || count( $elements ) > 1000 ) {
 			return new \WP_Error( 'wpb_invalid_document', __( 'The builder document is too deeply nested or too large.', 'wp-builder' ), array( 'status' => 400 ) );
 		}
 		$clean = array();
 		foreach ( $elements as $element ) {
+			++$total;
+			if ( $total > 2000 ) {
+				return new \WP_Error( 'wpb_too_many_elements', __( 'The builder document exceeds the 2,000 element limit.', 'wp-builder' ), array( 'status' => 413 ) );
+			}
 			if ( ! is_array( $element ) || ! in_array( $element['type'] ?? '', self::TYPES, true ) ) {
 				continue;
 			}
-			$children = self::sanitize_elements( (array) ( $element['children'] ?? array() ), $depth + 1 );
+			$children = self::sanitize_elements( (array) ( $element['children'] ?? array() ), $depth + 1, $total );
 			if ( is_wp_error( $children ) ) {
 				return $children;
 			}
@@ -56,7 +65,7 @@ final class Document {
 
 	private static function sanitize_props( array $props ): array {
 		foreach ( $props as $key => $value ) {
-			$props[ sanitize_key( $key ) ] = is_string( $value ) ? wp_kses_post( $value ) : $value;
+			$props[ sanitize_key( $key ) ] = is_array( $value ) ? map_deep( $value, 'wp_kses_post' ) : ( is_string( $value ) ? wp_kses_post( $value ) : $value );
 			if ( sanitize_key( $key ) !== $key ) {
 				unset( $props[ $key ] );
 			}
@@ -69,6 +78,7 @@ final class Document {
 			'margin', 'padding', 'color', 'backgroundColor', 'borderColor', 'borderWidth',
 			'borderRadius', 'fontSize', 'fontWeight', 'textAlign', 'width', 'minHeight',
 			'display', 'flexDirection', 'justifyContent', 'alignItems', 'gap',
+			'flexWrap', 'gridTemplateColumns', 'gridAutoRows',
 		);
 		$clean = array();
 		foreach ( $styles as $device => $rules ) {
