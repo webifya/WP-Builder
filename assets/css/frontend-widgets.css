@@ -6,3 +6,4 @@
 .wpb-tabs [role=tab][aria-selected=true]{border-color:var(--wpb-primary);color:var(--wpb-primary)}
 .wpb-tabs [role=tab]:focus-visible{outline:2px solid var(--wpb-primary);outline-offset:2px}
 .wpb-tabs [role=tabpanel]{padding:1rem 0}
+.wpb-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem}.wpb-gallery img{width:100%;height:auto}.wpb-social-icons{display:flex;flex-wrap:wrap;gap:.75rem}.wpb-icon-box{display:grid;gap:.5rem}.wpb-rating{accent-color:var(--wpb-primary)}
