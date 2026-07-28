@@ -27,3 +27,9 @@ REST writes require `edit_post`, REST-cookie nonce authentication, bounded nesti
 - Renderer: PHP SSR with optional hydrated interactivity
 - Templates: portable signed JSON format
 - Pro: theme locations, dynamic data, commerce, marketing, AI, teams
+
+## Recovery and portability
+
+Unsaved documents are copied to origin-scoped browser storage after changes. A successful server save clears the recovery copy. Exported templates use a versioned JSON envelope and are validated before import; the REST document sanitizer remains the final trust boundary.
+
+Builder post meta participates in WordPress revisions. Revision listing and restoration require the same `edit_post` capability as normal document writes, and restoration verifies parent ownership before copying data.
