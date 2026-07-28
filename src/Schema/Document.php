@@ -4,7 +4,12 @@ namespace Webifya\WPBuilder\Schema;
 defined( 'ABSPATH' ) || exit;
 
 final class Document {
-	private const TYPES = array( 'section', 'container', 'row', 'column', 'heading', 'text', 'image', 'button', 'spacer', 'divider', 'html', 'shortcode' );
+	private const TYPES = array(
+		'section', 'container', 'row', 'column', 'inner-container', 'spacer', 'divider',
+		'heading', 'text', 'image', 'button', 'icon', 'icon-box', 'video', 'audio',
+		'gallery', 'list', 'accordion', 'tabs', 'toggle', 'progress', 'counter',
+		'alert', 'social-icons', 'rating', 'html', 'shortcode',
+	);
 
 	public static function normalize( array $document ): array {
 		return array(
@@ -42,7 +47,7 @@ final class Document {
 				'id'       => preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) ( $element['id'] ?? wp_generate_uuid4() ) ),
 				'type'     => sanitize_key( $element['type'] ),
 				'props'    => self::sanitize_props( (array) ( $element['props'] ?? array() ) ),
-				'styles'   => map_deep( (array) ( $element['styles'] ?? array() ), 'sanitize_text_field' ),
+				'styles'   => self::sanitize_styles( (array) ( $element['styles'] ?? array() ) ),
 				'children' => $children,
 			);
 		}
@@ -57,5 +62,25 @@ final class Document {
 			}
 		}
 		return $props;
+	}
+
+	private static function sanitize_styles( array $styles ): array {
+		$allowed = array(
+			'margin', 'padding', 'color', 'backgroundColor', 'borderColor', 'borderWidth',
+			'borderRadius', 'fontSize', 'fontWeight', 'textAlign', 'width', 'minHeight',
+			'display', 'flexDirection', 'justifyContent', 'alignItems', 'gap',
+		);
+		$clean = array();
+		foreach ( $styles as $device => $rules ) {
+			if ( ! in_array( $device, array( 'desktop', 'tablet', 'mobile' ), true ) || ! is_array( $rules ) ) {
+				continue;
+			}
+			foreach ( $rules as $property => $value ) {
+				if ( in_array( $property, $allowed, true ) && is_scalar( $value ) ) {
+					$clean[ $device ][ $property ] = sanitize_text_field( (string) $value );
+				}
+			}
+		}
+		return $clean;
 	}
 }
