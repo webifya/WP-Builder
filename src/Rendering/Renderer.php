@@ -25,8 +25,9 @@ final class Renderer implements Service {
 		wp_enqueue_style( 'wp-builder' );
 		$elements = (array) ( $document['elements'] ?? array() );
 		$css      = $this->responsive_css( $elements );
+		$tokens   = $this->design_tokens( (array) ( $document['settings'] ?? array() ) );
 		return ( $css ? '<style id="wpb-responsive-' . absint( $post_id ) . '">' . $css . '</style>' : '' )
-			. '<div class="wpb-page">' . $this->elements( $elements ) . '</div>';
+			. '<div class="wpb-page"' . $tokens . '>' . $this->elements( $elements ) . '</div>';
 	}
 
 	private function elements( array $elements ): string {
@@ -158,5 +159,22 @@ final class Renderer implements Service {
 			}
 			$this->collect_responsive_css( (array) ( $element['children'] ?? array() ), $tablet, $mobile );
 		}
+	}
+
+	private function design_tokens( array $settings ): string {
+		$colors = (array) ( $settings['colors'] ?? array() );
+		$type   = (array) ( $settings['typography'] ?? array() );
+		$rules  = array();
+		foreach ( array( 'primary', 'secondary', 'text', 'background' ) as $name ) {
+			$value = (string) ( $colors[ $name ] ?? '' );
+			if ( preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ) {
+				$rules[] = '--wpb-' . $name . ':' . $value;
+			}
+		}
+		$family = (string) ( $type['fontFamily'] ?? '' );
+		if ( $family && ! preg_match( '/[;{}]/', $family ) ) {
+			$rules[] = '--wpb-font-family:' . $family;
+		}
+		return $rules ? ' style="' . esc_attr( implode( ';', $rules ) ) . '"' : '';
 	}
 }
