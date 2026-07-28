@@ -24,6 +24,7 @@ final class Plugin {
 			new Infrastructure\Assets(),
 			new Infrastructure\RestController(),
 			new Infrastructure\RevisionController(),
+			new Infrastructure\TemplateController(),
 			new Infrastructure\Editor(),
 			new Rendering\Renderer(),
 		);
