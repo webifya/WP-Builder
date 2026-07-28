@@ -31,7 +31,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Build clean plugin directory
+        run: |
+          mkdir -p dist/wp-builder
+          rsync -a --exclude-from=.distignore ./ dist/wp-builder/
       - uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: './dist/wp-builder'
+          slug: 'wp-builder'
 
   package:
     runs-on: ubuntu-latest
@@ -39,11 +46,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build clean plugin package
         run: |
-          mkdir -p build/wp-builder
-          rsync -a --exclude-from=.distignore ./ build/wp-builder/
-          cd build && zip -qr wp-builder-0.6.0.zip wp-builder
-          test -s wp-builder-0.6.0.zip
+          VERSION=$(sed -nE 's/^ \* Version:[[:space:]]*([0-9.]+).*/\1/p' wp-builder.php)
+          test -n "$VERSION"
+          mkdir -p dist/wp-builder
+          rsync -a --exclude-from=.distignore ./ dist/wp-builder/
+          cd dist
+          zip -qr "wp-builder-${VERSION}.zip" wp-builder
+          test -s "wp-builder-${VERSION}.zip"
+          echo "WPB_PACKAGE=dist/wp-builder-${VERSION}.zip" >> "$GITHUB_ENV"
+          echo "WPB_VERSION=${VERSION}" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@v4
         with:
-          name: wp-builder-0.6.0
-          path: build/wp-builder-0.6.0.zip
+          name: wp-builder-${{ env.WPB_VERSION }}
+          path: ${{ env.WPB_PACKAGE }}
