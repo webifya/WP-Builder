@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       WP Builder
  * Description:       A theme-friendly visual builder for WordPress content.
- * Version:           0.3.0
+ * Version:           0.4.0
  * Requires at least: 6.5
  * Requires PHP:      8.1
  * Author:            Webifya
@@ -12,7 +12,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WPB_VERSION', '0.3.0' );
+define( 'WPB_VERSION', '0.4.0' );
 define( 'WPB_FILE', __FILE__ );
 define( 'WPB_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPB_URL', plugin_dir_url( __FILE__ ) );
