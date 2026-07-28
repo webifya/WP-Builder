@@ -3,14 +3,14 @@ Contributors: webifya
 Requires at least: 6.5
 Tested up to: 6.7
 Requires PHP: 8.1
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 
 A theme-friendly visual builder for WordPress content.
 
 == Description ==
 
-WP Builder stores a versioned builder document in post meta and renders inside the active theme's normal content pipeline. Version 0.2 adds the first usable visual editing workflow. It remains a development preview rather than a production release.
+WP Builder stores a versioned builder document in post meta and renders inside the active theme's normal content pipeline. Version 0.3 adds recovery, media selection, portable templates, global design tokens and revision restoration. It remains a development preview rather than a production release.
 
 == Installation ==
 
