@@ -4,9 +4,9 @@ WP Builder is a GPL WordPress visual-builder foundation designed to coexist with
 
 ## Status
 
-Milestone 0.3 adds daily-use editing workflows to the visual foundation: local recovery, copy/paste and contextual actions, WordPress Media Library selection, portable page-template JSON, global color/type tokens, and revision browsing/restoration.
+Milestone 0.4 adds a reusable server-side template library, accessible tabs/accordion/toggle widgets, flex/grid controls and a reliability hardening pass.
 
-This remains a development preview. Complete free-widget behavior, saved server-side template libraries, formal accessibility review and the full automated compatibility matrix remain roadmap work.
+The hardening pass fixes Media Library modal visibility, external-image rendering, drag-to-nest behavior and unbounded document payloads. This remains a development preview; complete free-widget behavior, formal accessibility review and the full automated compatibility matrix remain roadmap work.
 
 ## Principles
 
