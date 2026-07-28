@@ -33,3 +33,11 @@ REST writes require `edit_post`, REST-cookie nonce authentication, bounded nesti
 Unsaved documents are copied to origin-scoped browser storage after changes. A successful server save clears the recovery copy. Exported templates use a versioned JSON envelope and are validated before import; the REST document sanitizer remains the final trust boundary.
 
 Builder post meta participates in WordPress revisions. Revision listing and restoration require the same `edit_post` capability as normal document writes, and restoration verifies parent ownership before copying data.
+
+## Template library
+
+Reusable page templates are private `wpb_template` posts. Their documents pass through the same sanitizer and size limits as page documents. Listing and creation require publishing capability; reading and deletion use WordPress’s object-level meta capabilities.
+
+## Asset lifecycle
+
+Frontend CSS and widget JavaScript are registered and conditionally enqueued during `wp_enqueue_scripts`, before compliant themes print their head. The renderer repeats enqueue calls as a defensive fallback for nonstandard rendering paths.
