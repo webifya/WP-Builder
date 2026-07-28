@@ -1,0 +1,8 @@
+.wpb-accordion details,.wpb-toggle{border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:.35rem;margin-block:.5rem}
+.wpb-accordion summary,.wpb-toggle summary{cursor:pointer;font-weight:600;padding:.85rem 1rem}
+.wpb-accordion details>div,.wpb-toggle>div{padding:0 1rem 1rem}
+.wpb-tabs [role=tablist]{display:flex;gap:.25rem;border-bottom:1px solid color-mix(in srgb,currentColor 20%,transparent)}
+.wpb-tabs [role=tab]{appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;color:inherit;padding:.75rem 1rem;cursor:pointer}
+.wpb-tabs [role=tab][aria-selected=true]{border-color:var(--wpb-primary);color:var(--wpb-primary)}
+.wpb-tabs [role=tab]:focus-visible{outline:2px solid var(--wpb-primary);outline-offset:2px}
+.wpb-tabs [role=tabpanel]{padding:1rem 0}
