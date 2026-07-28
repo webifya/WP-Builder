@@ -18,15 +18,19 @@ The feature catalog is a product program, not a single release. Shipping order i
 - Nested layout elements and initial usable widget set
 - Responsive canvas, per-device styles and device visibility
 
-## 0.3 — Editor completion
+## 0.3 — Daily-use editor workflows (completed)
 
-- Context menu, clipboard copy/paste, autosave/recovery and revision browser
-- Media library, complete free widgets, global colors and typography
-- Flex/grid control UI, responsive value inheritance and semantic widget markup
-- Import/export, saved sections and saved pages
+- Context menu, clipboard copy/paste and local crash recovery
+- WordPress Media Library integration
+- Global color and typography tokens
+- Portable page import/export with format validation
+- Revision browser and secure restoration
 
 ## 0.4 — Templates and release hardening
 
+- Complete free widgets and interaction scripts
+- Flex/grid control UI, responsive inheritance and semantic markup
+- Server-side saved sections/pages and template library
 - PHPUnit, Playwright, PHPStan, ESLint, PHPCS and compatibility matrix
 - Performance budgets, accessibility audit, localization and WordPress.org packaging
 
