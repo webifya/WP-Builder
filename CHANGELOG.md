@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- Completed the initial Free widget families: icon box, gallery, counter, rating and social links.
+- Added semantic output and lazy image loading.
+- Added PHP-version CI, JavaScript browser tests, WordPress Playground configuration and release exclusions.
+
 ## 0.4.0
 
 ### Added
