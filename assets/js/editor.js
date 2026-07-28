@@ -22,9 +22,12 @@
 		future: [],
 		saving: false,
 		dirty: false,
-		dragged: null
+		dragged: null,
+		clipboard: null,
+		recoveryTimer: null
 	};
 	var shell, canvas, navigator, inspector, status;
+	var recoveryKey = 'wpb-recovery-' + WPBuilder.postId;
 
 	function clone(value) {
 		return JSON.parse(JSON.stringify(value));
@@ -69,6 +72,7 @@
 		state.future = [];
 		state.dirty = true;
 		updateStatus('Unsaved');
+		scheduleRecovery();
 	}
 
 	function mutate(callback) {
@@ -85,6 +89,7 @@
 		state.dirty = true;
 		render();
 		updateStatus('Unsaved');
+		scheduleRecovery();
 	}
 
 	function redo() {
@@ -94,6 +99,7 @@
 		state.dirty = true;
 		render();
 		updateStatus('Unsaved');
+		scheduleRecovery();
 	}
 
 	function add(type, parentId) {
@@ -132,6 +138,29 @@
 		});
 	}
 
+	function copySelected() {
+		var element = selected();
+		if (!element) return;
+		state.clipboard = clone(element);
+		try { localStorage.setItem('wpb-clipboard', JSON.stringify(state.clipboard)); } catch (error) {}
+		updateStatus('Copied');
+	}
+
+	function pasteElement() {
+		if (!state.clipboard) {
+			try { state.clipboard = JSON.parse(localStorage.getItem('wpb-clipboard')); } catch (error) {}
+		}
+		if (!state.clipboard || !state.clipboard.type) return;
+		mutate(function () {
+			var copy = clone(state.clipboard);
+			reidentify(copy);
+			var target = selected();
+			if (target && CONTAINERS.indexOf(target.type) >= 0) target.children.push(copy);
+			else state.document.elements.push(copy);
+			state.selected = copy.id;
+		});
+	}
+
 	function reidentify(element) {
 		element.id = id();
 		(element.children || []).forEach(reidentify);
@@ -150,6 +179,145 @@
 			return true;
 		});
 		if (!inserted) state.document.elements.push(source);
+	}
+
+	function scheduleRecovery() {
+		window.clearTimeout(state.recoveryTimer);
+		state.recoveryTimer = window.setTimeout(function () {
+			try {
+				localStorage.setItem(recoveryKey, JSON.stringify({
+					savedAt: Date.now(),
+					document: state.document
+				}));
+				updateStatus('Recovery saved');
+			} catch (error) {
+				updateStatus('Local recovery unavailable');
+			}
+		}, 1200);
+	}
+
+	function showContextMenu(x, y) {
+		var old = document.querySelector('.wpb-context-menu');
+		if (old) old.remove();
+		var menu = el('div', 'wpb-context-menu');
+		[
+			['Copy', copySelected],
+			['Paste inside', pasteElement],
+			['Duplicate', duplicateSelected],
+			['Delete', removeSelected]
+		].forEach(function (item) {
+			menu.append(button(item[0], function () {
+				menu.remove();
+				item[1]();
+			}, 'wpb-context-action'));
+		});
+		menu.style.left = Math.min(x, window.innerWidth - 170) + 'px';
+		menu.style.top = Math.min(y, window.innerHeight - 170) + 'px';
+		document.body.append(menu);
+		window.setTimeout(function () {
+			document.addEventListener('pointerdown', function close() {
+				menu.remove();
+				document.removeEventListener('pointerdown', close);
+			});
+		});
+	}
+
+	function download(name, data) {
+		var blob = new Blob([data], { type: 'application/json' });
+		var url = URL.createObjectURL(blob);
+		var link = document.createElement('a');
+		link.href = url;
+		link.download = name;
+		link.click();
+		URL.revokeObjectURL(url);
+	}
+
+	function exportTemplate() {
+		var payload = {
+			format: 'wp-builder-template',
+			version: 1,
+			exportedAt: new Date().toISOString(),
+			document: state.document
+		};
+		download('wp-builder-page-' + WPBuilder.postId + '.json', JSON.stringify(payload, null, 2));
+		updateStatus('Template exported');
+	}
+
+	function validTemplate(payload) {
+		return payload && payload.format === 'wp-builder-template' &&
+			payload.version === 1 && payload.document &&
+			Array.isArray(payload.document.elements);
+	}
+
+	function importTemplate() {
+		var input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'application/json,.json';
+		input.addEventListener('change', function () {
+			var file = input.files && input.files[0];
+			if (!file || file.size > 5 * 1024 * 1024) {
+				updateStatus('Invalid or oversized template');
+				return;
+			}
+			file.text().then(function (contents) {
+				var payload;
+				try { payload = JSON.parse(contents); } catch (error) {
+					updateStatus('Template JSON is invalid');
+					return;
+				}
+				if (!validTemplate(payload)) {
+					updateStatus('Unsupported template format');
+					return;
+				}
+				if (!window.confirm('Replace this page with the imported template?')) return;
+				mutate(function () {
+					state.document = clone(payload.document);
+					state.document.elements.forEach(reidentify);
+					state.selected = null;
+				});
+				updateStatus('Template imported · save to publish');
+			});
+		});
+		input.click();
+	}
+
+	function showRevisions() {
+		inspector.hidden = false;
+		navigator.hidden = true;
+		inspector.replaceChildren(el('p', 'wpb-panel-empty', 'Loading revisions…'));
+		wp.apiFetch({ path: WPBuilder.restPath + WPBuilder.postId + '/revisions' }).then(function (items) {
+			inspector.replaceChildren(el('h2', '', 'Revision history'));
+			if (!items.length) {
+				inspector.append(el('p', 'wpb-panel-empty', 'No builder revisions are available yet.'));
+				return;
+			}
+			items.forEach(function (revision) {
+				var row = el('div', 'wpb-revision');
+				var detail = el('div');
+				detail.append(el('strong', '', revision.date), el('span', '', revision.author));
+				row.append(detail, button('Restore', function () {
+					if (!window.confirm('Restore this revision? Current unsaved changes will be replaced.')) return;
+					wp.apiFetch({
+						path: WPBuilder.restPath + WPBuilder.postId + '/revisions/' + revision.id + '/restore',
+						method: 'POST'
+					}).then(function (document) {
+						state.document = document;
+						state.selected = null;
+						state.history = [];
+						state.future = [];
+						state.dirty = false;
+						try { localStorage.removeItem(recoveryKey); } catch (error) {}
+						updateStatus('Revision restored');
+						render();
+					}).catch(function (error) {
+						updateStatus(error && error.message ? error.message : 'Restore failed');
+					});
+				}));
+				inspector.append(row);
+			});
+		}).catch(function (error) {
+			inspector.replaceChildren(el('p', 'wpb-panel-empty', error && error.message ? error.message : 'Could not load revisions'));
+		});
 	}
 
 	function el(tag, className, text) {
@@ -196,6 +364,10 @@
 			}, 'wpb-device'));
 		});
 		var actions = shell.querySelector('.wpb-actions');
+		actions.append(button('Design', function () { state.selected = null; render(); }));
+		actions.append(button('Revisions', showRevisions));
+		actions.append(button('Export', exportTemplate));
+		actions.append(button('Import', importTemplate));
 		actions.append(button('Exit', exitEditor));
 		actions.append(button('Save', save, 'wpb-ui-button wpb-primary'));
 		buildLibrary();
@@ -294,6 +466,13 @@
 			state.selected = element.id;
 			render();
 		});
+		node.addEventListener('contextmenu', function (event) {
+			event.preventDefault();
+			event.stopPropagation();
+			state.selected = element.id;
+			render();
+			showContextMenu(event.clientX, event.clientY);
+		});
 		node.addEventListener('dragstart', function (event) {
 			event.stopPropagation();
 			state.dragged = element.id;
@@ -322,6 +501,13 @@
 	function renderCanvas() {
 		canvas.replaceChildren();
 		canvas.dataset.device = state.device;
+		var settings = state.document.settings || {};
+		var colors = settings.colors || {};
+		canvas.style.setProperty('--wpb-primary', colors.primary || '#6d5dfc');
+		canvas.style.setProperty('--wpb-secondary', colors.secondary || '#475467');
+		canvas.style.setProperty('--wpb-text', colors.text || '#101828');
+		canvas.style.setProperty('--wpb-background', colors.background || '#ffffff');
+		canvas.style.fontFamily = (settings.typography || {}).fontFamily || '';
 		if (!state.document.elements.length) {
 			var empty = el('div', 'wpb-empty-state');
 			empty.append(el('h2', '', 'Start building'));
@@ -353,7 +539,7 @@
 		inspector.replaceChildren();
 		var element = selected();
 		if (!element) {
-			inspector.append(el('p', 'wpb-panel-empty', 'Select an element to edit its content and style.'));
+			renderGlobalInspector();
 			return;
 		}
 		inspector.append(el('h2', '', element.type.charAt(0).toUpperCase() + element.type.slice(1)));
@@ -370,6 +556,27 @@
 		if (element.type === 'image') {
 			prop('url', 'Image URL', 'url');
 			prop('alt', 'Alternative text', 'text');
+			inspector.append(button('Choose from Media Library', function () {
+				if (!wp.media) {
+					updateStatus('Media Library is unavailable');
+					return;
+				}
+				var frame = wp.media({
+					title: 'Choose an image',
+					button: { text: 'Use image' },
+					library: { type: 'image' },
+					multiple: false
+				});
+				frame.on('select', function () {
+					var attachment = frame.state().get('selection').first().toJSON();
+					mutate(function () {
+						element.props.attachmentId = attachment.id;
+						element.props.url = attachment.url;
+						element.props.alt = attachment.alt || '';
+					});
+				});
+				frame.open();
+			}, 'wpb-ui-button wpb-wide'));
 		}
 		if (element.type === 'progress') prop('value', 'Value (0–100)', 'number');
 		if (element.type === 'html') prop('html', 'HTML', 'textarea');
@@ -403,6 +610,35 @@
 		var row = el('div', 'wpb-inspector-actions');
 		row.append(button('Duplicate', duplicateSelected), button('Delete', removeSelected, 'wpb-ui-button wpb-danger'));
 		inspector.append(row);
+	}
+
+	function renderGlobalInspector() {
+		state.document.settings = state.document.settings || {};
+		state.document.settings.colors = state.document.settings.colors || {
+			primary: '#6d5dfc',
+			secondary: '#475467',
+			text: '#101828',
+			background: '#ffffff'
+		};
+		state.document.settings.typography = state.document.settings.typography || { fontFamily: '' };
+		inspector.append(el('h2', '', 'Global design'));
+		inspector.append(el('p', 'wpb-panel-empty', 'These tokens apply across the page and can be reused by widgets.'));
+		[
+			['primary', 'Primary color'],
+			['secondary', 'Secondary color'],
+			['text', 'Text color'],
+			['background', 'Background color']
+		].forEach(function (setting) {
+			inspector.append(field(setting[1], state.document.settings.colors[setting[0]], function (value) {
+				mutate(function () { state.document.settings.colors[setting[0]] = value; });
+			}, 'color'));
+		});
+		inspector.append(field('Font family', state.document.settings.typography.fontFamily, function (value) {
+			mutate(function () { state.document.settings.typography.fontFamily = value; });
+		}, 'text'));
+		inspector.append(el('h3', '', 'Page templates'));
+		inspector.append(button('Export this page', exportTemplate, 'wpb-ui-button wpb-wide'));
+		inspector.append(button('Import a page', importTemplate, 'wpb-ui-button wpb-wide'));
 	}
 
 	function navigatorItem(element, depth) {
@@ -448,6 +684,7 @@
 			state.history = [];
 			state.future = [];
 			state.dirty = false;
+			try { localStorage.removeItem(recoveryKey); } catch (error) {}
 			updateStatus('Saved');
 			render();
 		}).catch(function (error) {
@@ -473,6 +710,12 @@
 		} else if (modifier && event.key.toLowerCase() === 'd') {
 			event.preventDefault();
 			duplicateSelected();
+		} else if (modifier && event.key.toLowerCase() === 'c' && !/INPUT|TEXTAREA/.test(event.target.tagName)) {
+			event.preventDefault();
+			copySelected();
+		} else if (modifier && event.key.toLowerCase() === 'v' && !/INPUT|TEXTAREA/.test(event.target.tagName)) {
+			event.preventDefault();
+			pasteElement();
 		} else if ((event.key === 'Delete' || event.key === 'Backspace') && !/INPUT|TEXTAREA/.test(event.target.tagName)) {
 			removeSelected();
 		}
@@ -488,7 +731,19 @@
 		});
 		wp.apiFetch({ path: WPBuilder.restPath + WPBuilder.postId }).then(function (document) {
 			state.document = document;
-			updateStatus('Ready');
+			var recovery;
+			try { recovery = JSON.parse(localStorage.getItem(recoveryKey)); } catch (error) {}
+			if (recovery && recovery.document && Array.isArray(recovery.document.elements) &&
+				window.confirm('A local recovery copy was found. Restore it?')) {
+				state.document = recovery.document;
+				state.dirty = true;
+				updateStatus('Recovery restored · save to publish');
+			} else {
+				if (recovery) {
+					try { localStorage.removeItem(recoveryKey); } catch (error) {}
+				}
+				updateStatus('Ready');
+			}
 			render();
 		}).catch(function (error) {
 			updateStatus(error && error.message ? error.message : 'Could not load the document');
