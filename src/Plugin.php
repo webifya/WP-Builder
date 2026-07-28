@@ -23,6 +23,7 @@ final class Plugin {
 			new Infrastructure\Meta(),
 			new Infrastructure\Assets(),
 			new Infrastructure\RestController(),
+			new Infrastructure\RevisionController(),
 			new Infrastructure\Editor(),
 			new Rendering\Renderer(),
 		);
