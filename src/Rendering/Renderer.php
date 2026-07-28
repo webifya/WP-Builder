@@ -23,6 +23,8 @@ final class Renderer implements Service {
 			return $content;
 		}
 		wp_enqueue_style( 'wp-builder' );
+		wp_enqueue_style( 'wp-builder-widgets' );
+		wp_enqueue_script( 'wp-builder-frontend' );
 		$elements = (array) ( $document['elements'] ?? array() );
 		$css      = $this->responsive_css( $elements );
 		$tokens   = $this->design_tokens( (array) ( $document['settings'] ?? array() ) );
@@ -54,7 +56,11 @@ final class Renderer implements Service {
 					$html .= '<div class="' . esc_attr( $class ) . '"' . $style . '>' . wp_kses_post( $props['text'] ) . '</div>';
 					break;
 				case 'image':
-					$html .= wp_get_attachment_image( absint( $props['attachmentId'] ?? 0 ), 'full', false, array( 'class' => $class ) );
+					$image = wp_get_attachment_image( absint( $props['attachmentId'] ?? 0 ), 'full', false, array( 'class' => $class ) );
+					if ( ! $image && ! empty( $props['url'] ) ) {
+						$image = sprintf( '<img class="%s" src="%s" alt="%s"%s>', esc_attr( $class ), esc_url( $props['url'] ), esc_attr( $props['alt'] ?? '' ), $style );
+					}
+					$html .= $image;
 					break;
 				case 'button':
 					$html .= sprintf( '<a class="%s" href="%s"%s>%s</a>', esc_attr( $class ), esc_url( $props['url'] ?? '#' ), $style, esc_html( $props['text'] ?: __( 'Button', 'wp-builder' ) ) );
@@ -87,6 +93,42 @@ final class Renderer implements Service {
 				case 'progress':
 					$value = min( 100, max( 0, absint( $props['value'] ?? 0 ) ) );
 					$html .= sprintf( '<progress class="%s" max="100" value="%d"%s>%d%%</progress>', esc_attr( $class ), $value, $style, $value );
+					break;
+				case 'accordion':
+					$html .= '<div class="' . esc_attr( $class ) . '"' . $style . '>';
+					foreach ( (array) ( $props['items'] ?? array() ) as $item ) {
+						$html .= '<details><summary>' . esc_html( $item['title'] ?? '' ) . '</summary><div>' . wp_kses_post( $item['content'] ?? '' ) . '</div></details>';
+					}
+					$html .= '</div>';
+					break;
+				case 'toggle':
+					$html .= '<details class="' . esc_attr( $class ) . '"' . $style . '><summary>' . esc_html( $props['title'] ?? __( 'More information', 'wp-builder' ) ) . '</summary><div>' . wp_kses_post( $props['text'] ) . '</div></details>';
+					break;
+				case 'tabs':
+					$tabs_id = 'wpb-tabs-' . ( $id ?: wp_unique_id() );
+					$html   .= '<div class="' . esc_attr( $class ) . '" data-wpb-tabs' . $style . '><div role="tablist" aria-label="' . esc_attr__( 'Content tabs', 'wp-builder' ) . '">';
+					foreach ( (array) ( $props['items'] ?? array() ) as $index => $item ) {
+						$selected = 0 === $index;
+						$html .= sprintf(
+							'<button type="button" role="tab" id="%1$s-tab-%2$d" aria-controls="%1$s-panel-%2$d" aria-selected="%3$s" tabindex="%4$d">%5$s</button>',
+							esc_attr( $tabs_id ),
+							absint( $index ),
+							$selected ? 'true' : 'false',
+							$selected ? 0 : -1,
+							esc_html( $item['title'] ?? '' )
+						);
+					}
+					$html .= '</div>';
+					foreach ( (array) ( $props['items'] ?? array() ) as $index => $item ) {
+						$html .= sprintf(
+							'<div role="tabpanel" id="%1$s-panel-%2$d" aria-labelledby="%1$s-tab-%2$d"%3$s>%4$s</div>',
+							esc_attr( $tabs_id ),
+							absint( $index ),
+							0 === $index ? '' : ' hidden',
+							wp_kses_post( $item['content'] ?? '' )
+						);
+					}
+					$html .= '</div>';
 					break;
 				case 'counter':
 				case 'rating':
@@ -125,6 +167,9 @@ final class Renderer implements Service {
 			'justifyContent' => 'justify-content',
 			'alignItems'     => 'align-items',
 			'gap'            => 'gap',
+			'flexWrap'       => 'flex-wrap',
+			'gridTemplateColumns' => 'grid-template-columns',
+			'gridAutoRows'   => 'grid-auto-rows',
 		);
 		$css = '';
 		foreach ( $rules as $property => $value ) {
