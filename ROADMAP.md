@@ -41,7 +41,7 @@ The feature catalog is a product program, not a single release. Shipping order i
 - Added PHP 8.1–8.4 syntax CI and JavaScript browser tests
 - Added WordPress 7.0.2 Playground configuration and distribution exclusions
 
-## 0.6 — Production release candidate
+## 0.6–1.0 — Production hardening (completed)
 
 - Full installed end-to-end editor suite on classic and block themes
 - PHPCS, PHPStan, PHPUnit and Plugin Check with zero-error gates
@@ -58,7 +58,7 @@ The feature catalog is a product program, not a single release. Shipping order i
 - Enabled visual editing for saved theme templates
 - Added dynamic-tag insertion configuration
 
-## 1.0 — Stable free release
+## 1.0 — Stable Free release (completed)
 
 All advertised Free features implemented, documented, tested, and migration-safe.
 
