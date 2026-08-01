@@ -1,5 +1,5 @@
 <?php
-namespace Webifya\WPBuilder\Schema;
+namespace Webifya\Pagevia\Schema;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,7 +22,7 @@ final class Document {
 	public static function sanitize( array $document ) {
 		$encoded = wp_json_encode( $document );
 		if ( false === $encoded || strlen( $encoded ) > 2 * MB_IN_BYTES ) {
-			return new \WP_Error( 'wpb_document_too_large', __( 'The builder document exceeds the 2 MB limit.', 'wp-builder' ), array( 'status' => 413 ) );
+			return new \WP_Error( 'wpb_document_too_large', __( 'The builder document exceeds the 2 MB limit.', 'pagevia' ), array( 'status' => 413 ) );
 		}
 		$document = self::normalize( $document );
 		$total    = 0;
@@ -37,13 +37,13 @@ final class Document {
 
 	private static function sanitize_elements( array $elements, int $depth, int &$total ) {
 		if ( $depth > 12 || count( $elements ) > 1000 ) {
-			return new \WP_Error( 'wpb_invalid_document', __( 'The builder document is too deeply nested or too large.', 'wp-builder' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'wpb_invalid_document', __( 'The builder document is too deeply nested or too large.', 'pagevia' ), array( 'status' => 400 ) );
 		}
 		$clean = array();
 		foreach ( $elements as $element ) {
 			++$total;
 			if ( $total > 2000 ) {
-				return new \WP_Error( 'wpb_too_many_elements', __( 'The builder document exceeds the 2,000 element limit.', 'wp-builder' ), array( 'status' => 413 ) );
+				return new \WP_Error( 'wpb_too_many_elements', __( 'The builder document exceeds the 2,000 element limit.', 'pagevia' ), array( 'status' => 413 ) );
 			}
 			if ( ! is_array( $element ) || ! in_array( $element['type'] ?? '', self::TYPES, true ) ) {
 				continue;
