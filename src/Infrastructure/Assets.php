@@ -46,6 +46,7 @@ final class Assets implements Service {
 			return;
 		}
 		wp_enqueue_style( 'pagevia-editor', PAGEVIA_URL . 'assets/css/editor.css', array(), PAGEVIA_VERSION );
+		wp_enqueue_style( 'pagevia-editor-upgrades', PAGEVIA_URL . 'assets/css/editor-upgrades.css', array( 'pagevia-editor' ), PAGEVIA_VERSION );
 	}
 
 	private function configuration( int $post_id ): void {

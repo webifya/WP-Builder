@@ -2,6 +2,8 @@
 
 ## 1.4.0
 
+- Fixed “Edit with Pagevia” opening theme-generated 404 pages by adding a dedicated virtual editor canvas.
+- Moved the editor launcher from the sidebar to directly beneath the post title.
 - Added `pagevia/document_css` and `pagevia/element_classes` extension contracts.
 - Added opt-in editor controls and live previews for Pro advanced design and motion.
 - Expanded editor interaction coverage for the advanced-design extension boundary.
