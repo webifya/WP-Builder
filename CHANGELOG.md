@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- Added a page-level design system with custom breakpoints, spacing scale, and CSS variables.
+- Added global per-widget styles, reusable style presets, and semantic CSS classes.
+- Replaced desktop inline element styling with safe generated CSS so responsive overrides cascade correctly.
+
 ## 1.0.0
 
 - Added conflict-safe server autosave while preserving undo history.
