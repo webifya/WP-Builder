@@ -42,9 +42,9 @@ jobs:
         run: |
           mkdir -p build/pagevia
           rsync -a --exclude-from=.distignore ./ build/pagevia/
-          cd build && zip -qr pagevia-1.1.0.zip pagevia
-          test -s pagevia-1.1.0.zip
+          cd build && zip -qr pagevia-1.2.0.zip pagevia
+          test -s pagevia-1.2.0.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: pagevia-1.1.0
-          path: build/pagevia-1.1.0.zip
+          name: pagevia-1.2.0
+          path: build/pagevia-1.2.0.zip
