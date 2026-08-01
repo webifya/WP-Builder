@@ -154,6 +154,7 @@ final class Renderer implements Service {
 				case 'rating':
 					$value = min( 10, max( 0, (float) ( $props['value'] ?? 0 ) ) );
 					$max   = min( 10, max( 1, absint( $props['max'] ?? 5 ) ) );
+					/* translators: 1: rating value, 2: maximum rating value. */
 					$html .= sprintf( '<meter class="%s" min="0" max="%d" value="%s"%s aria-label="%s">%s/%d</meter>', esc_attr( $class ), $max, esc_attr( $value ), $style, esc_attr( sprintf( __( '%1$s out of %2$d stars', 'pagevia' ), $value, $max ) ), esc_html( $value ), $max );
 					break;
 				case 'icon':

@@ -1,4 +1,6 @@
 /.git
+/.gitignore
+/.distignore
 /.github
 /.wp-env.json
 /node_modules
@@ -7,4 +9,8 @@
 /package-lock.json
 /work
 /build
+/docs
+/ROADMAP.md
+/SECURITY.md
+/CHANGELOG.md
 /.DS_Store
