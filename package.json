@@ -4,6 +4,7 @@
   "scripts": {
     "check:js": "node --check assets/js/editor.js && node --check assets/js/frontend.js",
     "test:widgets": "node tests/frontend-tabs.test.js",
+    "test:editor": "node tests/editor.test.js",
     "wp:start": "wp-env start --runtime=playground",
     "wp:stop": "wp-env stop"
   },
