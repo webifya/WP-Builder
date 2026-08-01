@@ -4,7 +4,7 @@ Pagevia is a GPL WordPress visual-builder foundation designed to coexist with an
 
 ## Status
 
-Pagevia 1.1 adds a production design system to the stable Free builder: customizable responsive breakpoints, spacing and variable tokens, global widget styles, reusable style presets, and semantic CSS classes. Generated frontend CSS preserves the correct desktop/tablet/mobile cascade across themes.
+Pagevia 1.2 adds a stable editor and renderer extension contract used by the Pro WooCommerce Builder. The Free builder retains the 1.1 design system and remains fully usable without WooCommerce or Pro.
 
 Existing `_wpb_*` documents and saved templates are migrated in bounded batches. Dynamic placeholders such as `{{post_title}}` and `{{meta:price}}` resolve through the licensed Pro add-on with safe literal fallbacks.
 
