@@ -8,6 +8,7 @@ defined( 'ABSPATH' ) || exit;
 final class Renderer implements Service {
 	public function register(): void {
 		add_filter( 'the_content', array( $this, 'content' ), 20 );
+		add_filter( 'pagevia/render_post', array( $this, 'render_post' ), 10, 2 );
 	}
 
 	public function content( string $content ): string {
@@ -15,12 +16,16 @@ final class Renderer implements Service {
 			return $content;
 		}
 		$post_id = get_the_ID();
+		return $this->render_post( '', $post_id );
+	}
+
+	public function render_post( string $fallback, int $post_id ): string {
 		if ( '1' !== get_post_meta( $post_id, '_pagevia_enabled', true ) ) {
-			return $content;
+			return $fallback;
 		}
 		$document = get_post_meta( $post_id, '_pagevia_document', true );
 		if ( ! is_array( $document ) ) {
-			return $content;
+			return $fallback;
 		}
 		wp_enqueue_style( 'pagevia' );
 		wp_enqueue_style( 'pagevia-widgets' );
