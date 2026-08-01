@@ -6,7 +6,7 @@ Pagevia is a GPL WordPress visual-builder foundation designed to coexist with an
 
 ## Status
 
-Pagevia 1.3 hardens the release pipeline and supplies the extension foundation for Pagevia Pro popup and marketing widgets. The Free builder remains fully usable without Pro.
+Pagevia 1.4 adds stable generated-CSS and element-class extension contracts used by the Pro Advanced Design and Motion module. The Free builder remains lightweight and fully usable without Pro.
 
 Existing `_wpb_*` documents and saved templates are migrated in bounded batches. Dynamic placeholders such as `{{post_title}}` and `{{meta:price}}` resolve through the licensed Pro add-on with safe literal fallbacks.
 

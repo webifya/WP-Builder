@@ -529,6 +529,15 @@
 		Object.keys(rules).forEach(function (property) {
 			if (/^[a-zA-Z]+$/.test(property)) node.style[property] = rules[property];
 		});
+		if (Pagevia.advancedDesign) applyAdvancedPreview(node, element.props || {});
+	}
+
+	function applyAdvancedPreview(node, props) {
+		var tx = props.translateX || '0px', ty = props.translateY || '0px', rotate = Number(props.rotate || 0), scale = Number(props.scale || 1);
+		node.style.transform = 'translate(' + tx + ',' + ty + ') rotate(' + rotate + 'deg) scale(' + scale + ')';
+		node.style.filter = 'blur(' + Number(props.blur || 0) + 'px) brightness(' + Number(props.brightness || 100) + '%) contrast(' + Number(props.contrast || 100) + '%) saturate(' + Number(props.saturation || 100) + '%)';
+		node.style.mixBlendMode = props.blendMode || '';
+		if (props.glassEffect) { node.style.backdropFilter = 'blur(14px)'; node.style.backgroundColor = 'rgba(255,255,255,.16)'; }
 	}
 
 	function canvasElement(element) {
@@ -829,6 +838,7 @@
 		});
 		visibility.append(checkbox, el('span', '', 'Hide on ' + state.device));
 		inspector.append(visibility);
+		if (Pagevia.advancedDesign) renderAdvancedDesignInspector(element);
 		state.document.settings = state.document.settings || {};
 		state.document.settings.widgetStyles = state.document.settings.widgetStyles || {};
 		state.document.settings.presets = state.document.settings.presets || {};
@@ -856,6 +866,27 @@
 		var row = el('div', 'pagevia-inspector-actions');
 		row.append(button('Duplicate', duplicateSelected), button('Delete', removeSelected, 'pagevia-ui-button pagevia-danger'));
 		inspector.append(row);
+	}
+
+	function renderAdvancedDesignInspector(element) {
+		var props = element.props;
+		function set(name, value) { mutate(function () { if (value !== '') props[name] = value; else delete props[name]; }); }
+		inspector.append(el('h3', '', 'Advanced design & motion'));
+		inspector.append(selectField('Entrance animation', props.entranceAnimation || '', [['', 'None'], ['fade-up', 'Fade up'], ['fade-in', 'Fade in'], ['slide-left', 'Slide left'], ['zoom-in', 'Zoom in']], function (value) { set('entranceAnimation', value); }));
+		inspector.append(selectField('Hover animation', props.hoverAnimation || '', [['', 'None'], ['lift', 'Lift'], ['grow', 'Grow'], ['glow', 'Glow'], ['tilt', 'Mouse tilt']], function (value) { set('hoverAnimation', value); }));
+		inspector.append(selectField('Sticky position', props.sticky || '', [['', 'Off'], ['top', 'Top'], ['bottom', 'Bottom']], function (value) { set('sticky', value); }));
+		inspector.append(field('Animation delay (ms)', props.animationDelay || '', function (value) { set('animationDelay', String(Math.max(0, Math.min(5000, parseInt(value, 10) || 0)))); }, 'number'));
+		inspector.append(field('Parallax speed (-1 to 1)', props.parallaxSpeed || '', function (value) { set('parallaxSpeed', String(Math.max(-1, Math.min(1, parseFloat(value) || 0)))); }, 'number'));
+		inspector.append(unitField('Translate X', props.translateX || '', function (value) { set('translateX', value); }));
+		inspector.append(unitField('Translate Y', props.translateY || '', function (value) { set('translateY', value); }));
+		inspector.append(field('Rotate (degrees)', props.rotate || '', function (value) { set('rotate', String(Math.max(-360, Math.min(360, parseFloat(value) || 0)))); }, 'number'));
+		inspector.append(field('Scale', props.scale || '', function (value) { set('scale', String(Math.max(0.1, Math.min(5, parseFloat(value) || 1)))); }, 'number'));
+		inspector.append(field('Blur (px)', props.blur || '', function (value) { set('blur', String(Math.max(0, Math.min(50, parseFloat(value) || 0)))); }, 'number'));
+		[['brightness', 'Brightness (%)'], ['contrast', 'Contrast (%)'], ['saturation', 'Saturation (%)']].forEach(function (item) { inspector.append(field(item[1], props[item[0]] || '', function (value) { set(item[0], String(Math.max(0, Math.min(300, parseFloat(value) || 100)))); }, 'number')); });
+		inspector.append(selectField('Blend mode', props.blendMode || '', [['', 'Normal'], ['multiply', 'Multiply'], ['screen', 'Screen'], ['overlay', 'Overlay'], ['darken', 'Darken'], ['lighten', 'Lighten'], ['difference', 'Difference']], function (value) { set('blendMode', value); }));
+		var glass = el('label', 'pagevia-check'); var glassInput = document.createElement('input'); glassInput.type = 'checkbox'; glassInput.checked = !!props.glassEffect; glassInput.addEventListener('change', function () { mutate(function () { props.glassEffect = glassInput.checked ? '1' : ''; }); }); glass.append(glassInput, el('span', '', 'Glass effect')); inspector.append(glass);
+		inspector.append(field('Hover CSS declarations', props.hoverCss || '', function (value) { set('hoverCss', value); }, 'textarea'));
+		inspector.append(field('Custom CSS declarations', props.customCss || '', function (value) { set('customCss', value); }, 'textarea'));
 	}
 
 	function renderGlobalInspector() {

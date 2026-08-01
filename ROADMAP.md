@@ -80,6 +80,11 @@ All advertised Free features implemented, documented, tested, and migration-safe
 - Pro marketing widgets use the public editor and renderer extension contracts
 - Clean, non-recursive release packaging and distribution-level Plugin Check
 
+## 1.4 — Advanced design extension support (completed)
+
+- Filtered document CSS and semantic element-class contracts
+- Opt-in editor control surface for Pro design and motion effects
+
 ## Pro sequence
 
 1. Theme Builder and dynamic tags

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0
+
+- Added `pagevia/document_css` and `pagevia/element_classes` extension contracts.
+- Added opt-in editor controls and live previews for Pro advanced design and motion.
+- Expanded editor interaction coverage for the advanced-design extension boundary.
+
 ## 1.3.0
 
 - Fixed recursive GitHub release packaging by staging distributions outside the repository.

@@ -33,6 +33,7 @@ final class Renderer implements Service {
 		$elements = (array) ( $document['elements'] ?? array() );
 		$settings = (array) ( $document['settings'] ?? array() );
 		$css      = $this->document_css( $elements, $settings );
+		$css      = (string) apply_filters( 'pagevia/document_css', $css, $elements, $settings, $post_id );
 		$tokens   = $this->design_tokens( $settings );
 		return ( $css ? '<style id="pagevia-design-' . absint( $post_id ) . '">' . $css . '</style>' : '' )
 			. '<div class="pagevia-page"' . $tokens . '>' . $this->elements( $elements ) . '</div>';
@@ -59,6 +60,7 @@ final class Renderer implements Service {
 					$class .= ' pagevia-hide-' . $device;
 				}
 			}
+			$class = (string) apply_filters( 'pagevia/element_classes', $class, $element, array( 'type' => $type, 'id' => $id, 'props' => $props ) );
 			$style = '';
 			$custom = apply_filters( 'pagevia/render_element', '', $element, array( 'type' => $type, 'props' => $props, 'class' => $class, 'id' => $id, 'children' => $children ) );
 			if ( is_string( $custom ) && '' !== $custom ) {

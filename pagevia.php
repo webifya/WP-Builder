@@ -3,7 +3,7 @@
  * Plugin Name:       Pagevia – Visual Site Builder
  * Description:       A theme-friendly visual builder for WordPress content.
  * Plugin URI:        https://webninjallc.com/plugins/pagevia
- * Version:           1.3.0
+ * Version:           1.4.0
  * Requires at least: 6.5
  * Requires PHP:      8.1
  * Author:            Mahfuzar Rahman
@@ -14,7 +14,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'PAGEVIA_VERSION', '1.3.0' );
+define( 'PAGEVIA_VERSION', '1.4.0' );
 define( 'PAGEVIA_FILE', __FILE__ );
 define( 'PAGEVIA_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PAGEVIA_URL', plugin_dir_url( __FILE__ ) );
