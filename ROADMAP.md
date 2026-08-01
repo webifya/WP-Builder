@@ -62,6 +62,13 @@ The feature catalog is a product program, not a single release. Shipping order i
 
 All advertised Free features implemented, documented, tested, and migration-safe.
 
+## 1.1 — Design system (completed)
+
+- Custom tablet and mobile breakpoints
+- Global color, typography, spacing, and custom variable tokens
+- Global per-widget styles and reusable style presets
+- Semantic CSS classes and generated responsive CSS with correct cascade order
+
 ## Pro sequence
 
 1. Theme Builder and dynamic tags
