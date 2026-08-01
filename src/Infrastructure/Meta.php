@@ -1,7 +1,7 @@
 <?php
-namespace Webifya\WPBuilder\Infrastructure;
+namespace Webifya\Pagevia\Infrastructure;
 
-use Webifya\WPBuilder\Contracts\Service;
+use Webifya\Pagevia\Contracts\Service;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -12,11 +12,11 @@ final class Meta implements Service {
 
 	public function register_meta(): void {
 		register_post_type(
-			'wpb_template',
+			'pagevia_template',
 			array(
 				'labels'       => array(
-					'name'          => __( 'Builder Templates', 'wp-builder' ),
-					'singular_name' => __( 'Builder Template', 'wp-builder' ),
+					'name'          => __( 'Builder Templates', 'pagevia' ),
+					'singular_name' => __( 'Builder Template', 'pagevia' ),
 				),
 				'public'       => false,
 				'show_ui'      => true,
@@ -27,12 +27,12 @@ final class Meta implements Service {
 			)
 		);
 		foreach ( get_post_types( array( 'show_ui' => true ) ) as $post_type ) {
-			if ( 'wpb_template' === $post_type || ! post_type_supports( $post_type, 'editor' ) ) {
+			if ( 'pagevia_template' === $post_type || ! post_type_supports( $post_type, 'editor' ) ) {
 				continue;
 			}
 			register_post_meta(
 				$post_type,
-				'_wpb_document',
+				'_pagevia_document',
 				array(
 					'type'              => 'object',
 					'single'            => true,
@@ -43,7 +43,7 @@ final class Meta implements Service {
 			);
 			register_post_meta(
 				$post_type,
-				'_wpb_enabled',
+				'_pagevia_enabled',
 				array(
 					'type'              => 'string',
 					'single'            => true,
