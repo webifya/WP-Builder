@@ -1,8 +1,8 @@
 <?php
-namespace Webifya\WPBuilder\Infrastructure;
+namespace Webifya\Pagevia\Infrastructure;
 
-use Webifya\WPBuilder\Contracts\Service;
-use Webifya\WPBuilder\Schema\Document;
+use Webifya\Pagevia\Contracts\Service;
+use Webifya\Pagevia\Schema\Document;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,7 +13,7 @@ final class TemplateController implements Service {
 
 	public function routes(): void {
 		register_rest_route(
-			'wp-builder/v1',
+			'pagevia/v1',
 			'/templates',
 			array(
 				array(
@@ -33,7 +33,7 @@ final class TemplateController implements Service {
 			)
 		);
 		register_rest_route(
-			'wp-builder/v1',
+			'pagevia/v1',
 			'/templates/(?P<id>\d+)',
 			array(
 				array(
@@ -62,7 +62,7 @@ final class TemplateController implements Service {
 		$items = array();
 		$query = new \WP_Query(
 			array(
-				'post_type'      => 'wpb_template',
+				'post_type'      => 'pagevia_template',
 				'post_status'    => 'private',
 				'posts_per_page' => 100,
 				'orderby'        => 'modified',
@@ -79,7 +79,7 @@ final class TemplateController implements Service {
 	public function create( \WP_REST_Request $request ) {
 		$name = sanitize_text_field( (string) $request->get_param( 'name' ) );
 		if ( '' === $name ) {
-			return new \WP_Error( 'wpb_template_name_required', __( 'Enter a template name.', 'wp-builder' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'pagevia_template_name_required', __( 'Enter a template name.', 'pagevia' ), array( 'status' => 400 ) );
 		}
 		$document = Document::sanitize( (array) $request->get_param( 'document' ) );
 		if ( is_wp_error( $document ) ) {
@@ -87,7 +87,7 @@ final class TemplateController implements Service {
 		}
 		$post_id = wp_insert_post(
 			array(
-				'post_type'   => 'wpb_template',
+				'post_type'   => 'pagevia_template',
 				'post_status' => 'private',
 				'post_title'  => $name,
 				'post_author' => get_current_user_id(),
@@ -97,28 +97,28 @@ final class TemplateController implements Service {
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
-		update_post_meta( $post_id, '_wpb_document', $document );
+		update_post_meta( $post_id, '_pagevia_document', $document );
 		return new \WP_REST_Response( $this->summary( get_post( $post_id ) ), 201 );
 	}
 
 	public function read( \WP_REST_Request $request ) {
 		$template = get_post( absint( $request['id'] ) );
-		if ( ! $template || 'wpb_template' !== $template->post_type ) {
-			return new \WP_Error( 'wpb_template_not_found', __( 'Template not found.', 'wp-builder' ), array( 'status' => 404 ) );
+		if ( ! $template || 'pagevia_template' !== $template->post_type ) {
+			return new \WP_Error( 'pagevia_template_not_found', __( 'Template not found.', 'pagevia' ), array( 'status' => 404 ) );
 		}
 		return new \WP_REST_Response(
 			array(
 				'id'       => $template->ID,
 				'name'     => $template->post_title,
-				'document' => Document::normalize( (array) get_post_meta( $template->ID, '_wpb_document', true ) ),
+				'document' => Document::normalize( (array) get_post_meta( $template->ID, '_pagevia_document', true ) ),
 			)
 		);
 	}
 
 	public function delete( \WP_REST_Request $request ) {
 		$template = get_post( absint( $request['id'] ) );
-		if ( ! $template || 'wpb_template' !== $template->post_type ) {
-			return new \WP_Error( 'wpb_template_not_found', __( 'Template not found.', 'wp-builder' ), array( 'status' => 404 ) );
+		if ( ! $template || 'pagevia_template' !== $template->post_type ) {
+			return new \WP_Error( 'pagevia_template_not_found', __( 'Template not found.', 'pagevia' ), array( 'status' => 404 ) );
 		}
 		$deleted = wp_delete_post( $template->ID, true );
 		return new \WP_REST_Response( array( 'deleted' => (bool) $deleted ) );
