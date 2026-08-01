@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+- Added extensible editor widget types, default properties, and inspector controls.
+- Added the `pagevia/render_element` server-rendering contract for Pro and third-party widgets.
+- Added browser coverage for extension-provided widgets.
+
 ## 1.1.0
 
 - Added a page-level design system with custom breakpoints, spacing scale, and CSS variables.
