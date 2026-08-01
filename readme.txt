@@ -3,7 +3,7 @@ Contributors: webifya
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 
 A theme-friendly visual builder for WordPress content.
@@ -29,6 +29,12 @@ Free pages render through the active theme's normal content pipeline. Pagevia Pr
 No. Pagevia preserves documents by default to prevent accidental data loss.
 
 == Changelog ==
+
+= 1.1.0 =
+* Added custom responsive breakpoints, spacing tokens, and CSS variables.
+* Added global widget styles and reusable element style presets.
+* Added semantic CSS classes to every element.
+* Fixed responsive style precedence with safe generated cascading CSS.
 
 = 1.0.0 =
 
