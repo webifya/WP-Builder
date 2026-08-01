@@ -1,6 +1,6 @@
 (function () {
 	'use strict';
-	document.querySelectorAll('[data-wpb-tabs]').forEach(function (tabs) {
+	document.querySelectorAll('[data-pagevia-tabs]').forEach(function (tabs) {
 		var buttons = Array.from(tabs.querySelectorAll('[role="tab"]'));
 		var panels = Array.from(tabs.querySelectorAll('[role="tabpanel"]'));
 		function activate(button, focus) {
