@@ -7,6 +7,7 @@ final class Plugin {
 	private static ?self $instance = null;
 
 	public static function boot(): self {
+		load_plugin_textdomain( 'pagevia', false, dirname( plugin_basename( PAGEVIA_FILE ) ) . '/languages' );
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
@@ -20,6 +21,7 @@ final class Plugin {
 
 	private function __construct() {
 		$services = array(
+			new Infrastructure\UpgradeManager(),
 			new Infrastructure\LegacyMigration(),
 			new Infrastructure\Meta(),
 			new Infrastructure\Assets(),
