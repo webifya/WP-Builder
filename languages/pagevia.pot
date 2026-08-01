@@ -1,0 +1,22 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Pagevia 1.0.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: pagevia\n"
+
+#: src/Infrastructure/Editor.php
+msgid "Edit with Pagevia"
+msgstr ""
+
+#: src/Infrastructure/Editor.php
+msgid "You are not allowed to edit this content."
+msgstr ""
+
+#: src/Schema/Document.php
+msgid "The builder document exceeds the 2 MB limit."
+msgstr ""
+
+#: src/Infrastructure/TemplateController.php
+msgid "Template not found."
+msgstr ""
