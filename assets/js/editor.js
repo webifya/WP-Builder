@@ -16,6 +16,9 @@
 		['counter', 'Counter'], ['rating', 'Star Rating'], ['social-icons', 'Social Icons'],
 		['html', 'HTML'], ['shortcode', 'Shortcode']
 	];
+	(Pagevia.widgetTypes || []).forEach(function (item) {
+		if (Array.isArray(item) && item.length === 2 && !TYPES.some(function (existing) { return existing[0] === item[0]; })) TYPES.push(item);
+	});
 	var CONTAINERS = ['section', 'container', 'row', 'column', 'inner-container'];
 	var state = {
 		document: { version: 1, settings: {}, elements: [] },
@@ -44,7 +47,8 @@
 
 	function defaults(type) {
 		var props = {};
-		if (type === 'heading') props = { text: 'Your heading', tag: 'h2' };
+		if (Pagevia.widgetDefaults && Pagevia.widgetDefaults[type]) props = clone(Pagevia.widgetDefaults[type]);
+		else if (type === 'heading') props = { text: 'Your heading', tag: 'h2' };
 		else if (type === 'text') props = { text: 'Add your text here.' };
 		else if (type === 'button') props = { text: 'Learn more', url: '#' };
 		else if (type === 'image') props = { attachmentId: 0, url: '', alt: '' };
@@ -773,6 +777,10 @@
 		}
 		if (element.type === 'html') prop('html', 'HTML', 'textarea');
 		if (element.type === 'shortcode') prop('code', 'Shortcode', 'text');
+		((Pagevia.widgetControls || {})[element.type] || []).forEach(function (control) {
+			if (!control || !control.name || !control.label) return;
+			prop(control.name, control.label, control.type || 'text');
+		});
 		prop('cssClasses', 'CSS classes', 'text');
 		if (Pagevia.dynamicTags && Pagevia.dynamicTags.length) {
 			var tagRow = el('div', 'pagevia-dynamic-tags');
