@@ -240,9 +240,9 @@ final class Renderer implements Service {
 		foreach ( (array) ( $settings['widgetStyles'] ?? array() ) as $type => $styles ) {
 			$type = sanitize_key( $type );
 			if ( ! $type || ! is_array( $styles ) ) continue;
-			$this->append_css_rule( '.pagevia-' . $type, (array) ( $styles['desktop'] ?? array() ), $desktop );
-			$this->append_css_rule( '.pagevia-' . $type, (array) ( $styles['tablet'] ?? array() ), $tablet );
-			$this->append_css_rule( '.pagevia-' . $type, (array) ( $styles['mobile'] ?? array() ), $mobile );
+			$this->append_css_rule( '.pagevia-page .pagevia-' . $type, (array) ( $styles['desktop'] ?? array() ), $desktop );
+			$this->append_css_rule( '.pagevia-page .pagevia-' . $type, (array) ( $styles['tablet'] ?? array() ), $tablet );
+			$this->append_css_rule( '.pagevia-page .pagevia-' . $type, (array) ( $styles['mobile'] ?? array() ), $mobile );
 		}
 		$this->collect_element_css( $elements, $desktop, $tablet, $mobile );
 		$breakpoints = (array) ( $settings['breakpoints'] ?? array() );
@@ -258,7 +258,7 @@ final class Renderer implements Service {
 		foreach ( $elements as $element ) {
 			$id = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) ( $element['id'] ?? '' ) );
 			if ( $id ) {
-				$selector = '.pagevia-id-' . $id;
+				$selector = '.pagevia-page .pagevia-id-' . $id;
 				$this->append_css_rule( $selector, (array) ( $element['styles']['desktop'] ?? array() ), $desktop );
 				$this->append_css_rule( $selector, (array) ( $element['styles']['tablet'] ?? array() ), $tablet );
 				$this->append_css_rule( $selector, (array) ( $element['styles']['mobile'] ?? array() ), $mobile );
