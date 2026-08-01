@@ -33,7 +33,7 @@ final class Editor implements Service {
 	}
 
 	public function render( \WP_Post $post ): void {
-		$url = add_query_arg( array( 'pagevia-edit' => $post->ID ), get_preview_post_link( $post ) ?: get_permalink( $post ) ?: home_url( '/' ) );
+		$url = add_query_arg( array( 'pagevia-edit' => $post->ID ), 'pagevia_template' === $post->post_type ? home_url( '/' ) : ( get_preview_post_link( $post ) ?: get_permalink( $post ) ?: home_url( '/' ) ) );
 		printf(
 			'<p>%s</p><a class="button button-primary button-large" href="%s" target="_blank" rel="noopener">%s</a>',
 			esc_html__( 'Open the visual editor in a new tab. Changes are saved through the authenticated REST API.', 'pagevia' ),
