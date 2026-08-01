@@ -49,18 +49,14 @@ final class Assets implements Service {
 	}
 
 	private function configuration( int $post_id ): void {
+		$config = apply_filters( 'pagevia/editor_config', array(
+			'restPath' => '/pagevia/v1/documents/', 'postId' => $post_id,
+			'nonce' => wp_create_nonce( 'wp_rest' ), 'version' => PAGEVIA_VERSION,
+			'locale' => determine_locale(), 'upgradeUrl' => 'https://www.webninjallc.com/plugins/pagevia',
+		) );
 		wp_add_inline_script(
 			'pagevia-editor',
-			'window.Pagevia=' . wp_json_encode(
-				array(
-					'restPath' => '/pagevia/v1/documents/',
-					'postId'   => $post_id,
-					'nonce'    => wp_create_nonce( 'wp_rest' ),
-					'version'  => PAGEVIA_VERSION,
-					'locale'   => determine_locale(),
-					'upgradeUrl' => 'https://www.webninjallc.com/plugins/pagevia',
-				)
-			) . ';',
+			'window.Pagevia=' . wp_json_encode( $config ) . ';',
 			'before'
 		);
 	}
