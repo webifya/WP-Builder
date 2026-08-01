@@ -1,5 +1,5 @@
 <?php
-namespace Webifya\WPBuilder;
+namespace Webifya\Pagevia;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -11,7 +11,7 @@ final class Autoloader {
 				if ( ! str_starts_with( $class, $prefix ) ) {
 					return;
 				}
-				$file = WPB_PATH . 'src/' . str_replace( '\\', '/', substr( $class, strlen( $prefix ) ) ) . '.php';
+				$file = PAGEVIA_PATH . 'src/' . str_replace( '\\', '/', substr( $class, strlen( $prefix ) ) ) . '.php';
 				if ( is_readable( $file ) ) {
 					require_once $file;
 				}

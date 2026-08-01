@@ -1,9 +1,9 @@
 (function () {
 	'use strict';
 
-	if (!window.WPBuilder || !window.wp || !wp.apiFetch) return;
+	if (!window.Pagevia || !window.wp || !wp.apiFetch) return;
 	if (wp.apiFetch.createNonceMiddleware) {
-		wp.apiFetch.use(wp.apiFetch.createNonceMiddleware(WPBuilder.nonce));
+		wp.apiFetch.use(wp.apiFetch.createNonceMiddleware(Pagevia.nonce));
 	}
 
 	var TYPES = [
@@ -30,14 +30,14 @@
 		recoveryTimer: null
 	};
 	var shell, canvas, navigator, inspector, status;
-	var recoveryKey = 'wpb-recovery-' + WPBuilder.postId;
+	var recoveryKey = 'pagevia-recovery-' + Pagevia.postId;
 
 	function clone(value) {
 		return JSON.parse(JSON.stringify(value));
 	}
 
 	function id() {
-		return 'wpb-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+		return 'pagevia-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
 	}
 
 	function defaults(type) {
@@ -157,13 +157,13 @@
 		var element = selected();
 		if (!element) return;
 		state.clipboard = clone(element);
-		try { localStorage.setItem('wpb-clipboard', JSON.stringify(state.clipboard)); } catch (error) {}
+		try { localStorage.setItem('pagevia-clipboard', JSON.stringify(state.clipboard)); } catch (error) {}
 		updateStatus('Copied');
 	}
 
 	function pasteElement() {
 		if (!state.clipboard) {
-			try { state.clipboard = JSON.parse(localStorage.getItem('wpb-clipboard')); } catch (error) {}
+			try { state.clipboard = JSON.parse(localStorage.getItem('pagevia-clipboard')); } catch (error) {}
 		}
 		if (!state.clipboard || !state.clipboard.type) return;
 		mutate(function () {
@@ -225,9 +225,9 @@
 	}
 
 	function showContextMenu(x, y) {
-		var old = document.querySelector('.wpb-context-menu');
+		var old = document.querySelector('.pagevia-context-menu');
 		if (old) old.remove();
-		var menu = el('div', 'wpb-context-menu');
+		var menu = el('div', 'pagevia-context-menu');
 		[
 			['Copy', copySelected],
 			['Paste inside', pasteElement],
@@ -237,7 +237,7 @@
 			menu.append(button(item[0], function () {
 				menu.remove();
 				item[1]();
-			}, 'wpb-context-action'));
+			}, 'pagevia-context-action'));
 		});
 		menu.style.left = Math.min(x, window.innerWidth - 170) + 'px';
 		menu.style.top = Math.min(y, window.innerHeight - 170) + 'px';
@@ -262,17 +262,17 @@
 
 	function exportTemplate() {
 		var payload = {
-			format: 'wp-builder-template',
+			format: 'pagevia-template',
 			version: 1,
 			exportedAt: new Date().toISOString(),
 			document: state.document
 		};
-		download('wp-builder-page-' + WPBuilder.postId + '.json', JSON.stringify(payload, null, 2));
+		download('pagevia-page-' + Pagevia.postId + '.json', JSON.stringify(payload, null, 2));
 		updateStatus('Template exported');
 	}
 
 	function validTemplate(payload) {
-		return payload && payload.format === 'wp-builder-template' &&
+		return payload && payload.format === 'pagevia-template' &&
 			payload.version === 1 && payload.document &&
 			Array.isArray(payload.document.elements);
 	}
@@ -312,21 +312,21 @@
 	function showRevisions() {
 		inspector.hidden = false;
 		navigator.hidden = true;
-		inspector.replaceChildren(el('p', 'wpb-panel-empty', 'Loading revisions…'));
-		wp.apiFetch({ path: WPBuilder.restPath + WPBuilder.postId + '/revisions' }).then(function (items) {
+		inspector.replaceChildren(el('p', 'pagevia-panel-empty', 'Loading revisions…'));
+		wp.apiFetch({ path: Pagevia.restPath + Pagevia.postId + '/revisions' }).then(function (items) {
 			inspector.replaceChildren(el('h2', '', 'Revision history'));
 			if (!items.length) {
-				inspector.append(el('p', 'wpb-panel-empty', 'No builder revisions are available yet.'));
+				inspector.append(el('p', 'pagevia-panel-empty', 'No builder revisions are available yet.'));
 				return;
 			}
 			items.forEach(function (revision) {
-				var row = el('div', 'wpb-revision');
+				var row = el('div', 'pagevia-revision');
 				var detail = el('div');
 				detail.append(el('strong', '', revision.date), el('span', '', revision.author));
 				row.append(detail, button('Restore', function () {
 					if (!window.confirm('Restore this revision? Current unsaved changes will be replaced.')) return;
 					wp.apiFetch({
-						path: WPBuilder.restPath + WPBuilder.postId + '/revisions/' + revision.id + '/restore',
+						path: Pagevia.restPath + Pagevia.postId + '/revisions/' + revision.id + '/restore',
 						method: 'POST'
 					}).then(function (document) {
 						state.document = document;
@@ -344,7 +344,7 @@
 				inspector.append(row);
 			});
 		}).catch(function (error) {
-			inspector.replaceChildren(el('p', 'wpb-panel-empty', error && error.message ? error.message : 'Could not load revisions'));
+			inspector.replaceChildren(el('p', 'pagevia-panel-empty', error && error.message ? error.message : 'Could not load revisions'));
 		});
 	}
 
@@ -353,7 +353,7 @@
 		if (!name || !name.trim()) return;
 		updateStatus('Saving template…');
 		wp.apiFetch({
-			path: '/wp-builder/v1/templates',
+			path: '/pagevia/v1/templates',
 			method: 'POST',
 			data: { name: name.trim(), document: state.document }
 		}).then(function () {
@@ -368,23 +368,23 @@
 		inspector.hidden = false;
 		navigator.hidden = true;
 		inspector.replaceChildren(el('h2', '', 'Template library'));
-		inspector.append(button('Save current page', saveToLibrary, 'wpb-ui-button wpb-primary wpb-wide'));
-		var list = el('div', 'wpb-template-list');
-		list.append(el('p', 'wpb-panel-empty', 'Loading templates…'));
+		inspector.append(button('Save current page', saveToLibrary, 'pagevia-ui-button pagevia-primary pagevia-wide'));
+		var list = el('div', 'pagevia-template-list');
+		list.append(el('p', 'pagevia-panel-empty', 'Loading templates…'));
 		inspector.append(list);
-		wp.apiFetch({ path: '/wp-builder/v1/templates' }).then(function (items) {
+		wp.apiFetch({ path: '/pagevia/v1/templates' }).then(function (items) {
 			list.replaceChildren();
 			if (!items.length) {
-				list.append(el('p', 'wpb-panel-empty', 'No saved templates yet.'));
+				list.append(el('p', 'pagevia-panel-empty', 'No saved templates yet.'));
 				return;
 			}
 			items.forEach(function (template) {
-				var row = el('div', 'wpb-template');
+				var row = el('div', 'pagevia-template');
 				var detail = el('div');
 				detail.append(el('strong', '', template.name), el('span', '', template.modified));
-				var actions = el('div', 'wpb-template-actions');
+				var actions = el('div', 'pagevia-template-actions');
 				actions.append(button('Insert', function () {
-					wp.apiFetch({ path: '/wp-builder/v1/templates/' + template.id }).then(function (item) {
+					wp.apiFetch({ path: '/pagevia/v1/templates/' + template.id }).then(function (item) {
 						mutate(function () {
 							var imported = clone(item.document);
 							imported.elements.forEach(reidentify);
@@ -398,13 +398,13 @@
 				}));
 				actions.append(button('Delete', function () {
 					if (!window.confirm('Permanently delete this saved template?')) return;
-					wp.apiFetch({ path: '/wp-builder/v1/templates/' + template.id, method: 'DELETE' }).then(showTemplates);
-				}, 'wpb-ui-button wpb-danger'));
+					wp.apiFetch({ path: '/pagevia/v1/templates/' + template.id, method: 'DELETE' }).then(showTemplates);
+				}, 'pagevia-ui-button pagevia-danger'));
 				row.append(detail, actions);
 				list.append(row);
 			});
 		}).catch(function (error) {
-			list.replaceChildren(el('p', 'wpb-panel-empty', error && error.message ? error.message : 'Could not load templates'));
+			list.replaceChildren(el('p', 'pagevia-panel-empty', error && error.message ? error.message : 'Could not load templates'));
 		});
 	}
 
@@ -416,7 +416,7 @@
 	}
 
 	function button(label, action, className, title) {
-		var node = el('button', className || 'wpb-ui-button', label);
+		var node = el('button', className || 'pagevia-ui-button', label);
 		node.type = 'button';
 		node.title = title || label;
 		node.addEventListener('click', action);
@@ -424,43 +424,44 @@
 	}
 
 	function buildShell() {
-		document.documentElement.classList.add('wpb-editing');
-		shell = el('div', 'wpb-editor-shell');
+		document.documentElement.classList.add('pagevia-editing');
+		shell = el('div', 'pagevia-editor-shell');
 		shell.innerHTML =
-			'<header class="wpb-toolbar" aria-label="Builder toolbar">' +
-			'<strong class="wpb-brand">WP Builder</strong>' +
-			'<div class="wpb-history"></div><div class="wpb-devices"></div>' +
-			'<span class="wpb-status" role="status">Loading…</span><div class="wpb-actions"></div>' +
-			'</header><aside class="wpb-panel wpb-library"><h2>Elements</h2><input class="wpb-search" type="search" placeholder="Search elements…"><div class="wpb-element-list"></div></aside>' +
-			'<main class="wpb-stage"><div class="wpb-canvas-frame"><div class="wpb-live-canvas" data-device="desktop"></div></div></main>' +
-			'<aside class="wpb-panel wpb-right"><div class="wpb-panel-tabs"><button data-panel="inspect">Style</button><button data-panel="layers">Layers</button></div><div class="wpb-inspector"></div><div class="wpb-navigator" hidden></div></aside>';
+			'<header class="pagevia-toolbar" aria-label="Builder toolbar">' +
+			'<strong class="pagevia-brand">Pagevia</strong>' +
+			'<div class="pagevia-history"></div><div class="pagevia-devices"></div>' +
+			'<span class="pagevia-status" role="status">Loading…</span><div class="pagevia-actions"></div>' +
+			'</header><aside class="pagevia-panel pagevia-library"><h2>Elements</h2><input class="pagevia-search" type="search" placeholder="Search elements…"><div class="pagevia-element-list"></div></aside>' +
+			'<main class="pagevia-stage"><div class="pagevia-canvas-frame"><div class="pagevia-live-canvas" data-device="desktop"></div></div></main>' +
+			'<aside class="pagevia-panel pagevia-right"><div class="pagevia-panel-tabs"><button data-panel="inspect">Style</button><button data-panel="layers">Layers</button></div><div class="pagevia-inspector"></div><div class="pagevia-navigator" hidden></div></aside>';
 		document.body.appendChild(shell);
-		canvas = shell.querySelector('.wpb-live-canvas');
-		navigator = shell.querySelector('.wpb-navigator');
-		inspector = shell.querySelector('.wpb-inspector');
-		status = shell.querySelector('.wpb-status');
+		canvas = shell.querySelector('.pagevia-live-canvas');
+		navigator = shell.querySelector('.pagevia-navigator');
+		inspector = shell.querySelector('.pagevia-inspector');
+		status = shell.querySelector('.pagevia-status');
 
-		var history = shell.querySelector('.wpb-history');
-		history.append(button('↶', undo, 'wpb-icon-button', 'Undo (Ctrl/Cmd+Z)'));
-		history.append(button('↷', redo, 'wpb-icon-button', 'Redo (Ctrl/Cmd+Shift+Z)'));
-		var devices = shell.querySelector('.wpb-devices');
+		var history = shell.querySelector('.pagevia-history');
+		history.append(button('↶', undo, 'pagevia-icon-button', 'Undo (Ctrl/Cmd+Z)'));
+		history.append(button('↷', redo, 'pagevia-icon-button', 'Redo (Ctrl/Cmd+Shift+Z)'));
+		var devices = shell.querySelector('.pagevia-devices');
 		[['desktop', 'Desktop'], ['tablet', 'Tablet'], ['mobile', 'Mobile']].forEach(function (item) {
 			devices.append(button(item[1], function () {
 				state.device = item[0];
 				canvas.dataset.device = item[0];
 				renderInspector();
-			}, 'wpb-device'));
+			}, 'pagevia-device'));
 		});
-		var actions = shell.querySelector('.wpb-actions');
+		var actions = shell.querySelector('.pagevia-actions');
+		if (Pagevia.upgradeUrl) actions.append(button('Upgrade', function () { window.open(Pagevia.upgradeUrl, '_blank', 'noopener'); }));
 		actions.append(button('Design', function () { state.selected = null; render(); }));
 		actions.append(button('Library', showTemplates));
 		actions.append(button('Revisions', showRevisions));
 		actions.append(button('Export', exportTemplate));
 		actions.append(button('Import', importTemplate));
 		actions.append(button('Exit', exitEditor));
-		actions.append(button('Save', save, 'wpb-ui-button wpb-primary'));
+		actions.append(button('Save', save, 'pagevia-ui-button pagevia-primary'));
 		buildLibrary();
-		shell.querySelectorAll('.wpb-panel-tabs button').forEach(function (tab) {
+		shell.querySelectorAll('.pagevia-panel-tabs button').forEach(function (tab) {
 			tab.addEventListener('click', function () {
 				var layers = tab.dataset.panel === 'layers';
 				navigator.hidden = !layers;
@@ -470,8 +471,8 @@
 	}
 
 	function buildLibrary() {
-		var list = shell.querySelector('.wpb-element-list');
-		var search = shell.querySelector('.wpb-search');
+		var list = shell.querySelector('.pagevia-element-list');
+		var search = shell.querySelector('.pagevia-search');
 		function draw(query) {
 			list.replaceChildren();
 			TYPES.filter(function (item) {
@@ -480,10 +481,10 @@
 				var card = button(item[1], function () {
 					var target = selected();
 					add(item[0], target && CONTAINERS.indexOf(target.type) >= 0 ? target.id : null);
-				}, 'wpb-element-card', 'Add ' + item[1]);
+				}, 'pagevia-element-card', 'Add ' + item[1]);
 				card.draggable = true;
 				card.addEventListener('dragstart', function (event) {
-					event.dataTransfer.setData('application/x-wpb-type', item[0]);
+					event.dataTransfer.setData('application/x-pagevia-type', item[0]);
 				});
 				list.append(card);
 			});
@@ -501,7 +502,7 @@
 	}
 
 	function canvasElement(element) {
-		var node = el('div', 'wpb-canvas-element wpb-canvas-' + element.type);
+		var node = el('div', 'pagevia-canvas-element pagevia-canvas-' + element.type);
 		node.dataset.id = element.id;
 		node.draggable = true;
 		node.tabIndex = 0;
@@ -510,23 +511,23 @@
 		if (element.props && element.props['hide_' + state.device]) node.classList.add('is-device-hidden');
 		applyStyles(node, element);
 
-		var label = el('span', 'wpb-element-label', element.type);
+		var label = el('span', 'pagevia-element-label', element.type);
 		node.append(label);
-		var content = el('div', 'wpb-element-content');
+		var content = el('div', 'pagevia-element-content');
 		if (element.type === 'heading') {
 			var heading = el(element.props.tag || 'h2', '', element.props.text || 'Your heading');
 			content.append(heading);
 		} else if (element.type === 'text' || element.type === 'alert') {
 			content.append(el('p', '', element.props.text || 'Add text'));
 		} else if (element.type === 'button') {
-			content.append(el('span', 'wpb-preview-button', element.props.text || 'Button'));
+			content.append(el('span', 'pagevia-preview-button', element.props.text || 'Button'));
 		} else if (element.type === 'image') {
 			if (element.props.url) {
 				var image = document.createElement('img');
 				image.src = element.props.url;
 				image.alt = element.props.alt || '';
 				content.append(image);
-			} else content.append(el('div', 'wpb-placeholder', 'Choose an image'));
+			} else content.append(el('div', 'pagevia-placeholder', 'Choose an image'));
 		} else if (element.type === 'list') {
 			var ul = el('ul');
 			(element.props.text || '').split(/\r?\n/).forEach(function (item) {
@@ -536,7 +537,7 @@
 		} else if (element.type === 'divider') {
 			content.append(document.createElement('hr'));
 		} else if (element.type === 'spacer') {
-			content.append(el('span', 'wpb-placeholder', 'Spacer'));
+			content.append(el('span', 'pagevia-placeholder', 'Spacer'));
 		} else if (element.type === 'progress') {
 			var progress = document.createElement('progress');
 			progress.max = 100;
@@ -544,12 +545,12 @@
 			content.append(progress);
 		} else if (element.type === 'accordion' || element.type === 'tabs') {
 			(element.props.items || []).forEach(function (item) {
-				var preview = el('div', 'wpb-interactive-preview');
+				var preview = el('div', 'pagevia-interactive-preview');
 				preview.append(el('strong', '', item.title || 'Item'), el('span', '', item.content || ''));
 				content.append(preview);
 			});
 		} else if (element.type === 'toggle') {
-			var toggle = el('div', 'wpb-interactive-preview');
+			var toggle = el('div', 'pagevia-interactive-preview');
 			toggle.append(el('strong', '', element.props.title || 'More information'), el('span', '', element.props.text || ''));
 			content.append(toggle);
 		} else if (element.props && (element.props.text || element.props.url || element.props.code)) {
@@ -557,7 +558,7 @@
 		}
 		(element.children || []).forEach(function (child) { content.append(canvasElement(child)); });
 		if (CONTAINERS.indexOf(element.type) >= 0 && !(element.children || []).length) {
-			content.append(el('div', 'wpb-drop-hint', 'Drop elements here'));
+			content.append(el('div', 'pagevia-drop-hint', 'Drop elements here'));
 		}
 		node.append(content);
 		node.addEventListener('click', function (event) {
@@ -575,7 +576,7 @@
 		node.addEventListener('dragstart', function (event) {
 			event.stopPropagation();
 			state.dragged = element.id;
-			event.dataTransfer.setData('application/x-wpb-id', element.id);
+			event.dataTransfer.setData('application/x-pagevia-id', element.id);
 		});
 		node.addEventListener('dragover', function (event) {
 			event.preventDefault();
@@ -587,10 +588,10 @@
 			event.preventDefault();
 			event.stopPropagation();
 			node.classList.remove('is-drop-target');
-			var type = event.dataTransfer.getData('application/x-wpb-type');
+			var type = event.dataTransfer.getData('application/x-pagevia-type');
 			if (type && CONTAINERS.indexOf(element.type) >= 0) add(type, element.id);
 			else {
-				var sourceId = event.dataTransfer.getData('application/x-wpb-id');
+				var sourceId = event.dataTransfer.getData('application/x-pagevia-id');
 				if (sourceId && sourceId !== element.id) mutate(function () { move(sourceId, element.id); });
 			}
 		});
@@ -602,29 +603,29 @@
 		canvas.dataset.device = state.device;
 		var settings = state.document.settings || {};
 		var colors = settings.colors || {};
-		canvas.style.setProperty('--wpb-primary', colors.primary || '#6d5dfc');
-		canvas.style.setProperty('--wpb-secondary', colors.secondary || '#475467');
-		canvas.style.setProperty('--wpb-text', colors.text || '#101828');
-		canvas.style.setProperty('--wpb-background', colors.background || '#ffffff');
+		canvas.style.setProperty('--pagevia-primary', colors.primary || '#6d5dfc');
+		canvas.style.setProperty('--pagevia-secondary', colors.secondary || '#475467');
+		canvas.style.setProperty('--pagevia-text', colors.text || '#101828');
+		canvas.style.setProperty('--pagevia-background', colors.background || '#ffffff');
 		canvas.style.fontFamily = (settings.typography || {}).fontFamily || '';
 		if (!state.document.elements.length) {
-			var empty = el('div', 'wpb-empty-state');
+			var empty = el('div', 'pagevia-empty-state');
 			empty.append(el('h2', '', 'Start building'));
 			empty.append(el('p', '', 'Add an element from the left panel or begin with a section.'));
-			empty.append(button('Add section', function () { add('section'); }, 'wpb-ui-button wpb-primary'));
+			empty.append(button('Add section', function () { add('section'); }, 'pagevia-ui-button pagevia-primary'));
 			canvas.append(empty);
 		} else state.document.elements.forEach(function (element) { canvas.append(canvasElement(element)); });
 		canvas.ondragover = function (event) { event.preventDefault(); };
 		canvas.ondrop = function (event) {
 			if (event.target !== canvas) return;
 			event.preventDefault();
-			var type = event.dataTransfer.getData('application/x-wpb-type');
+			var type = event.dataTransfer.getData('application/x-pagevia-type');
 			if (type) add(type);
 		};
 	}
 
 	function field(label, value, change, type) {
-		var wrap = el('label', 'wpb-field');
+		var wrap = el('label', 'pagevia-field');
 		wrap.append(el('span', '', label));
 		var input = type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
 		if (type && type !== 'textarea') input.type = type;
@@ -691,7 +692,7 @@
 					});
 				});
 				frame.open();
-			}, 'wpb-ui-button wpb-wide'));
+			}, 'pagevia-ui-button pagevia-wide'));
 		}
 		if (element.type === 'progress') prop('value', 'Value (0–100)', 'number');
 		if (element.type === 'counter') {
@@ -720,6 +721,17 @@
 		}
 		if (element.type === 'html') prop('html', 'HTML', 'textarea');
 		if (element.type === 'shortcode') prop('code', 'Shortcode', 'text');
+		if (Pagevia.dynamicTags && Pagevia.dynamicTags.length) {
+			var tagRow = el('div', 'pagevia-dynamic-tags');
+			var tagSelect = document.createElement('select');
+			Pagevia.dynamicTags.forEach(function (tag) { var option = el('option', '', tag); option.value = tag; tagSelect.append(option); });
+			tagRow.append(tagSelect, button('Insert dynamic tag', function () {
+				var property = Object.keys(element.props).find(function (key) { return typeof element.props[key] === 'string' && key !== 'tag'; });
+				if (!property) return updateStatus('This element has no compatible text field');
+				mutate(function () { element.props[property] = (element.props[property] || '') + '{{' + tagSelect.value + '}}'; });
+			}, 'pagevia-ui-button'));
+			inspector.append(el('h3', '', 'Dynamic content'), tagRow);
+		}
 
 		inspector.append(el('h3', '', 'Style · ' + state.device));
 		var styles = element.styles[state.device] || (element.styles[state.device] = {});
@@ -740,7 +752,7 @@
 				});
 			}, setting[2]));
 		});
-		var visibility = el('label', 'wpb-check');
+		var visibility = el('label', 'pagevia-check');
 		var checkbox = document.createElement('input');
 		checkbox.type = 'checkbox';
 		checkbox.checked = !!element.props['hide_' + state.device];
@@ -749,8 +761,8 @@
 		});
 		visibility.append(checkbox, el('span', '', 'Hide on ' + state.device));
 		inspector.append(visibility);
-		var row = el('div', 'wpb-inspector-actions');
-		row.append(button('Duplicate', duplicateSelected), button('Delete', removeSelected, 'wpb-ui-button wpb-danger'));
+		var row = el('div', 'pagevia-inspector-actions');
+		row.append(button('Duplicate', duplicateSelected), button('Delete', removeSelected, 'pagevia-ui-button pagevia-danger'));
 		inspector.append(row);
 	}
 
@@ -764,7 +776,7 @@
 		};
 		state.document.settings.typography = state.document.settings.typography || { fontFamily: '' };
 		inspector.append(el('h2', '', 'Global design'));
-		inspector.append(el('p', 'wpb-panel-empty', 'These tokens apply across the page and can be reused by widgets.'));
+		inspector.append(el('p', 'pagevia-panel-empty', 'These tokens apply across the page and can be reused by widgets.'));
 		[
 			['primary', 'Primary color'],
 			['secondary', 'Secondary color'],
@@ -779,12 +791,12 @@
 			mutate(function () { state.document.settings.typography.fontFamily = value; });
 		}, 'text'));
 		inspector.append(el('h3', '', 'Page templates'));
-		inspector.append(button('Export this page', exportTemplate, 'wpb-ui-button wpb-wide'));
-		inspector.append(button('Import a page', importTemplate, 'wpb-ui-button wpb-wide'));
+		inspector.append(button('Export this page', exportTemplate, 'pagevia-ui-button pagevia-wide'));
+		inspector.append(button('Import a page', importTemplate, 'pagevia-ui-button pagevia-wide'));
 	}
 
 	function navigatorItem(element, depth) {
-		var item = el('button', 'wpb-layer' + (element.id === state.selected ? ' is-selected' : ''), element.type);
+		var item = el('button', 'pagevia-layer' + (element.id === state.selected ? ' is-selected' : ''), element.type);
 		item.type = 'button';
 		item.style.paddingLeft = (12 + depth * 16) + 'px';
 		item.addEventListener('click', function () {
@@ -818,7 +830,7 @@
 		state.saving = true;
 		updateStatus('Saving…');
 		wp.apiFetch({
-			path: WPBuilder.restPath + WPBuilder.postId,
+			path: Pagevia.restPath + Pagevia.postId,
 			method: 'PUT',
 			data: { document: state.document }
 		}).then(function (document) {
@@ -837,7 +849,7 @@
 	function exitEditor() {
 		if (state.dirty && !window.confirm('Leave without saving your changes?')) return;
 		var url = new URL(window.location.href);
-		url.searchParams.delete('wpb-edit');
+		url.searchParams.delete('pagevia-edit');
 		window.location.href = url.toString();
 	}
 
@@ -871,7 +883,7 @@
 			event.preventDefault();
 			event.returnValue = '';
 		});
-		wp.apiFetch({ path: WPBuilder.restPath + WPBuilder.postId }).then(function (document) {
+		wp.apiFetch({ path: Pagevia.restPath + Pagevia.postId }).then(function (document) {
 			state.document = document;
 			var recovery;
 			try { recovery = JSON.parse(localStorage.getItem(recoveryKey)); } catch (error) {}

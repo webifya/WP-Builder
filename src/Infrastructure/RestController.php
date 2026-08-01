@@ -1,8 +1,8 @@
 <?php
-namespace Webifya\WPBuilder\Infrastructure;
+namespace Webifya\Pagevia\Infrastructure;
 
-use Webifya\WPBuilder\Contracts\Service;
-use Webifya\WPBuilder\Schema\Document;
+use Webifya\Pagevia\Contracts\Service;
+use Webifya\Pagevia\Schema\Document;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,7 +13,7 @@ final class RestController implements Service {
 
 	public function routes(): void {
 		register_rest_route(
-			'wp-builder/v1',
+			'pagevia/v1',
 			'/documents/(?P<id>\d+)',
 			array(
 				array(
@@ -39,7 +39,7 @@ final class RestController implements Service {
 	}
 
 	public function read( \WP_REST_Request $request ): \WP_REST_Response {
-		$document = get_post_meta( absint( $request['id'] ), '_wpb_document', true );
+		$document = get_post_meta( absint( $request['id'] ), '_pagevia_document', true );
 		return new \WP_REST_Response( Document::normalize( is_array( $document ) ? $document : array() ) );
 	}
 
@@ -49,8 +49,8 @@ final class RestController implements Service {
 		if ( is_wp_error( $document ) ) {
 			return $document;
 		}
-		update_post_meta( $post_id, '_wpb_document', $document );
-		update_post_meta( $post_id, '_wpb_enabled', '1' );
+		update_post_meta( $post_id, '_pagevia_document', $document );
+		update_post_meta( $post_id, '_pagevia_enabled', '1' );
 		wp_save_post_revision( $post_id );
 		return new \WP_REST_Response( $document, 200 );
 	}

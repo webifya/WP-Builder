@@ -1,5 +1,5 @@
 <?php
-namespace Webifya\WPBuilder;
+namespace Webifya\Pagevia;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,12 +14,13 @@ final class Plugin {
 	}
 
 	public static function activate(): void {
-		update_option( 'wpb_version', WPB_VERSION );
+		update_option( 'pagevia_version', PAGEVIA_VERSION );
 		flush_rewrite_rules();
 	}
 
 	private function __construct() {
 		$services = array(
+			new Infrastructure\LegacyMigration(),
 			new Infrastructure\Meta(),
 			new Infrastructure\Assets(),
 			new Infrastructure\RestController(),
@@ -31,6 +32,6 @@ final class Plugin {
 		foreach ( $services as $service ) {
 			$service->register();
 		}
-		do_action( 'wpb/loaded', $this );
+		do_action( 'pagevia/loaded', $this );
 	}
 }

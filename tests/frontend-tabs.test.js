@@ -2,7 +2,7 @@ const fs = require('fs');
 const { JSDOM } = require('jsdom');
 
 const dom = new JSDOM(
-	'<div data-wpb-tabs><div role="tablist"><button role="tab" aria-controls="p1" aria-selected="true">One</button><button role="tab" aria-controls="p2" aria-selected="false" tabindex="-1">Two</button></div><div id="p1" role="tabpanel">A</div><div id="p2" role="tabpanel" hidden>B</div></div>',
+	'<div data-pagevia-tabs><div role="tablist"><button role="tab" aria-controls="p1" aria-selected="true">One</button><button role="tab" aria-controls="p2" aria-selected="false" tabindex="-1">Two</button></div><div id="p1" role="tabpanel">A</div><div id="p2" role="tabpanel" hidden>B</div></div>',
 	{ runScripts: 'outside-only' }
 );
 dom.window.eval(fs.readFileSync('assets/js/frontend.js', 'utf8'));

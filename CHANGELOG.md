@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.0
+
+- Added the production Theme Builder canvas and template resolution engine.
+- Added visual header, footer, singular, archive, search and 404 templates.
+- Added include/exclude conditions, priorities and safe site fallbacks.
+- Exposed reusable document rendering for Pro theme locations.
+
+## 0.8.0
+
+- Rebranded all public identifiers, namespaces, assets, hooks and storage keys to Pagevia.
+- Added batched migration of legacy builder documents.
+- Connected rendered `{{dynamic_tag}}` placeholders to Pagevia Pro resolvers.
+- Added the official Pagevia Pro upgrade URL.
+
 ## 0.5.0
 
 - Completed the initial Free widget families: icon box, gallery, counter, rating and social links.

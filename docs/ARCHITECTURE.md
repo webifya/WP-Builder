@@ -2,7 +2,7 @@
 
 ## Content model
 
-Each built document lives in `_wpb_document` post meta:
+Each built document lives in `_pagevia_document` post meta:
 
 ```json
 {"version":1,"settings":{},"elements":[{"id":"...","type":"section","props":{},"styles":{},"children":[]}]}
@@ -36,7 +36,7 @@ Builder post meta participates in WordPress revisions. Revision listing and rest
 
 ## Template library
 
-Reusable page templates are private `wpb_template` posts. Their documents pass through the same sanitizer and size limits as page documents. Listing and creation require publishing capability; reading and deletion use WordPress’s object-level meta capabilities.
+Reusable page templates are private `pagevia_template` posts. Their documents pass through the same sanitizer and size limits as page documents. Listing and creation require publishing capability; reading and deletion use WordPress’s object-level meta capabilities.
 
 ## Asset lifecycle
 
