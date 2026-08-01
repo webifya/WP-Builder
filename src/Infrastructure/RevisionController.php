@@ -1,8 +1,8 @@
 <?php
-namespace Webifya\WPBuilder\Infrastructure;
+namespace Webifya\Pagevia\Infrastructure;
 
-use Webifya\WPBuilder\Contracts\Service;
-use Webifya\WPBuilder\Schema\Document;
+use Webifya\Pagevia\Contracts\Service;
+use Webifya\Pagevia\Schema\Document;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,7 +13,7 @@ final class RevisionController implements Service {
 
 	public function routes(): void {
 		register_rest_route(
-			'wp-builder/v1',
+			'pagevia/v1',
 			'/documents/(?P<id>\d+)/revisions',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
@@ -23,7 +23,7 @@ final class RevisionController implements Service {
 			)
 		);
 		register_rest_route(
-			'wp-builder/v1',
+			'pagevia/v1',
 			'/documents/(?P<id>\d+)/revisions/(?P<revision>\d+)/restore',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
@@ -44,7 +44,7 @@ final class RevisionController implements Service {
 	public function index( \WP_REST_Request $request ): \WP_REST_Response {
 		$items = array();
 		foreach ( wp_get_post_revisions( absint( $request['id'] ), array( 'posts_per_page' => 30 ) ) as $revision ) {
-			$document = get_metadata( 'post', $revision->ID, '_wpb_document', true );
+			$document = get_metadata( 'post', $revision->ID, '_pagevia_document', true );
 			if ( ! is_array( $document ) ) {
 				continue;
 			}
@@ -52,7 +52,7 @@ final class RevisionController implements Service {
 			$items[] = array(
 				'id'     => $revision->ID,
 				'date'   => mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $revision->post_modified ),
-				'author' => $user ? $user->display_name : __( 'Unknown', 'wp-builder' ),
+				'author' => $user ? $user->display_name : __( 'Unknown', 'pagevia' ),
 			);
 		}
 		return new \WP_REST_Response( $items );
@@ -63,18 +63,18 @@ final class RevisionController implements Service {
 		$revision_id = absint( $request['revision'] );
 		$revision    = get_post( $revision_id );
 		if ( ! $revision || 'revision' !== $revision->post_type || $post_id !== (int) $revision->post_parent ) {
-			return new \WP_Error( 'wpb_invalid_revision', __( 'That revision does not belong to this document.', 'wp-builder' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'wpb_invalid_revision', __( 'That revision does not belong to this document.', 'pagevia' ), array( 'status' => 400 ) );
 		}
-		$document = get_metadata( 'post', $revision_id, '_wpb_document', true );
+		$document = get_metadata( 'post', $revision_id, '_pagevia_document', true );
 		if ( ! is_array( $document ) ) {
-			return new \WP_Error( 'wpb_missing_revision', __( 'That revision has no builder data.', 'wp-builder' ), array( 'status' => 404 ) );
+			return new \WP_Error( 'wpb_missing_revision', __( 'That revision has no builder data.', 'pagevia' ), array( 'status' => 404 ) );
 		}
 		$document = Document::sanitize( $document );
 		if ( is_wp_error( $document ) ) {
 			return $document;
 		}
-		update_post_meta( $post_id, '_wpb_document', $document );
-		update_post_meta( $post_id, '_wpb_enabled', '1' );
+		update_post_meta( $post_id, '_pagevia_document', $document );
+		update_post_meta( $post_id, '_pagevia_enabled', '1' );
 		wp_save_post_revision( $post_id );
 		return new \WP_REST_Response( $document );
 	}
