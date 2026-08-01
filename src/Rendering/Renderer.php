@@ -31,9 +31,10 @@ final class Renderer implements Service {
 		wp_enqueue_style( 'pagevia-widgets' );
 		wp_enqueue_script( 'pagevia-frontend' );
 		$elements = (array) ( $document['elements'] ?? array() );
-		$css      = $this->responsive_css( $elements );
-		$tokens   = $this->design_tokens( (array) ( $document['settings'] ?? array() ) );
-		return ( $css ? '<style id="pagevia-responsive-' . absint( $post_id ) . '">' . $css . '</style>' : '' )
+		$settings = (array) ( $document['settings'] ?? array() );
+		$css      = $this->document_css( $elements, $settings );
+		$tokens   = $this->design_tokens( $settings );
+		return ( $css ? '<style id="pagevia-design-' . absint( $post_id ) . '">' . $css . '</style>' : '' )
 			. '<div class="pagevia-page"' . $tokens . '>' . $this->elements( $elements ) . '</div>';
 	}
 
@@ -47,12 +48,18 @@ final class Renderer implements Service {
 			$props['text'] = $props['text'] ?? '';
 			$id            = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) ( $element['id'] ?? '' ) );
 			$class         = 'pagevia-element pagevia-' . $type . ( $id ? ' pagevia-id-' . $id : '' );
+			foreach ( preg_split( '/\s+/', (string) ( $props['cssClasses'] ?? '' ) ) as $custom_class ) {
+				$custom_class = sanitize_html_class( $custom_class );
+				if ( $custom_class ) {
+					$class .= ' ' . $custom_class;
+				}
+			}
 			foreach ( array( 'desktop', 'tablet', 'mobile' ) as $device ) {
 				if ( ! empty( $props[ 'hide_' . $device ] ) ) {
 					$class .= ' pagevia-hide-' . $device;
 				}
 			}
-			$style = $this->style_attribute( (array) ( $element['styles']['desktop'] ?? array() ) );
+			$style = '';
 			switch ( $type ) {
 				case 'heading':
 					$tag   = in_array( $props['tag'] ?? 'h2', array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ), true ) ? $props['tag'] : 'h2';
@@ -72,10 +79,10 @@ final class Renderer implements Service {
 					$html .= sprintf( '<a class="%s" href="%s"%s>%s</a>', esc_attr( $class ), esc_url( $props['url'] ?? '#' ), $style, esc_html( $props['text'] ?: __( 'Button', 'pagevia' ) ) );
 					break;
 				case 'video':
-					$html .= wp_video_shortcode( array( 'src' => esc_url_raw( $props['url'] ?? '' ) ) );
+					$html .= '<div class="' . esc_attr( $class ) . '">' . wp_video_shortcode( array( 'src' => esc_url_raw( $props['url'] ?? '' ) ) ) . '</div>';
 					break;
 				case 'audio':
-					$html .= wp_audio_shortcode( array( 'src' => esc_url_raw( $props['url'] ?? '' ) ) );
+					$html .= '<div class="' . esc_attr( $class ) . '">' . wp_audio_shortcode( array( 'src' => esc_url_raw( $props['url'] ?? '' ) ) ) . '</div>';
 					break;
 				case 'list':
 					$items = preg_split( '/\r\n|\r|\n/', wp_strip_all_tags( $props['text'] ) );
@@ -194,7 +201,7 @@ final class Renderer implements Service {
 		return $props;
 	}
 
-	private function style_attribute( array $rules ): string {
+	private function rules_css( array $rules ): string {
 		$map = array(
 			'margin'         => 'margin',
 			'padding'        => 'padding',
@@ -219,37 +226,50 @@ final class Renderer implements Service {
 		);
 		$css = '';
 		foreach ( $rules as $property => $value ) {
-			if ( isset( $map[ $property ] ) && is_string( $value ) && ! preg_match( '/[;{}]|url\s*\(/i', $value ) ) {
+			if ( isset( $map[ $property ] ) && is_string( $value ) && ! preg_match( '/[;{}<>]|url\s*\(/i', $value ) ) {
 				$css .= $map[ $property ] . ':' . $value . ';';
 			}
 		}
-		return $css ? ' style="' . esc_attr( $css ) . '"' : '';
-	}
-
-	private function responsive_css( array $elements ): string {
-		$tablet = '';
-		$mobile = '';
-		$this->collect_responsive_css( $elements, $tablet, $mobile );
-		$css = $tablet ? '@media(max-width:1024px){' . $tablet . '}' : '';
-		$css .= $mobile ? '@media(max-width:767px){' . $mobile . '}' : '';
 		return $css;
 	}
 
-	private function collect_responsive_css( array $elements, string &$tablet, string &$mobile ): void {
+	private function document_css( array $elements, array $settings ): string {
+		$desktop = '';
+		$tablet = '';
+		$mobile = '';
+		foreach ( (array) ( $settings['widgetStyles'] ?? array() ) as $type => $styles ) {
+			$type = sanitize_key( $type );
+			if ( ! $type || ! is_array( $styles ) ) continue;
+			$this->append_css_rule( '.pagevia-' . $type, (array) ( $styles['desktop'] ?? array() ), $desktop );
+			$this->append_css_rule( '.pagevia-' . $type, (array) ( $styles['tablet'] ?? array() ), $tablet );
+			$this->append_css_rule( '.pagevia-' . $type, (array) ( $styles['mobile'] ?? array() ), $mobile );
+		}
+		$this->collect_element_css( $elements, $desktop, $tablet, $mobile );
+		$breakpoints = (array) ( $settings['breakpoints'] ?? array() );
+		$tablet_width = min( 1600, max( 600, absint( $breakpoints['tablet'] ?? 1024 ) ) );
+		$mobile_width = min( $tablet_width - 1, max( 320, absint( $breakpoints['mobile'] ?? 767 ) ) );
+		$css = $desktop;
+		$css .= $tablet ? '@media(max-width:' . $tablet_width . 'px){' . $tablet . '}' : '';
+		$css .= $mobile ? '@media(max-width:' . $mobile_width . 'px){' . $mobile . '}' : '';
+		return $css;
+	}
+
+	private function collect_element_css( array $elements, string &$desktop, string &$tablet, string &$mobile ): void {
 		foreach ( $elements as $element ) {
 			$id = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) ( $element['id'] ?? '' ) );
 			if ( $id ) {
-				$tablet_rules = $this->style_attribute( (array) ( $element['styles']['tablet'] ?? array() ) );
-				$mobile_rules = $this->style_attribute( (array) ( $element['styles']['mobile'] ?? array() ) );
-				if ( $tablet_rules ) {
-					$tablet .= '.pagevia-id-' . $id . '{' . substr( $tablet_rules, 8, -1 ) . '}';
-				}
-				if ( $mobile_rules ) {
-					$mobile .= '.pagevia-id-' . $id . '{' . substr( $mobile_rules, 8, -1 ) . '}';
-				}
+				$selector = '.pagevia-id-' . $id;
+				$this->append_css_rule( $selector, (array) ( $element['styles']['desktop'] ?? array() ), $desktop );
+				$this->append_css_rule( $selector, (array) ( $element['styles']['tablet'] ?? array() ), $tablet );
+				$this->append_css_rule( $selector, (array) ( $element['styles']['mobile'] ?? array() ), $mobile );
 			}
-			$this->collect_responsive_css( (array) ( $element['children'] ?? array() ), $tablet, $mobile );
+			$this->collect_element_css( (array) ( $element['children'] ?? array() ), $desktop, $tablet, $mobile );
 		}
+	}
+
+	private function append_css_rule( string $selector, array $rules, string &$css ): void {
+		$declarations = $this->rules_css( $rules );
+		if ( $declarations ) $css .= $selector . '{' . $declarations . '}';
 	}
 
 	private function design_tokens( array $settings ): string {
@@ -262,10 +282,23 @@ final class Renderer implements Service {
 				$rules[] = '--pagevia-' . $name . ':' . $value;
 			}
 		}
+		foreach ( array( 'xs', 'sm', 'md', 'lg', 'xl' ) as $name ) {
+			$value = (string) ( $settings['spacing'][ $name ] ?? '' );
+			if ( $this->safe_token_value( $value ) ) $rules[] = '--pagevia-space-' . $name . ':' . $value;
+		}
+		foreach ( (array) ( $settings['variables'] ?? array() ) as $name => $value ) {
+			$name = sanitize_key( $name );
+			$value = (string) $value;
+			if ( $name && $this->safe_token_value( $value ) ) $rules[] = '--pagevia-' . $name . ':' . $value;
+		}
 		$family = (string) ( $type['fontFamily'] ?? '' );
 		if ( $family && ! preg_match( '/[;{}]/', $family ) ) {
 			$rules[] = '--pagevia-font-family:' . $family;
 		}
 		return $rules ? ' style="' . esc_attr( implode( ';', $rules ) ) . '"' : '';
+	}
+
+	private function safe_token_value( string $value ): bool {
+		return '' !== trim( $value ) && ! preg_match( '/[;{}<>]|url\s*\(/i', $value );
 	}
 }
