@@ -69,6 +69,12 @@ All advertised Free features implemented, documented, tested, and migration-safe
 - Global per-widget styles and reusable style presets
 - Semantic CSS classes and generated responsive CSS with correct cascade order
 
+## 1.2 — WooCommerce extension API (completed)
+
+- Extensible editor widget catalog, defaults, and inspector controls
+- Filtered server-rendering contract for optional commerce widgets
+- No WooCommerce dependency in the Free plugin
+
 ## Pro sequence
 
 1. Theme Builder and dynamic tags
