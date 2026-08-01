@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.0
+
+- Added conflict-safe server autosave while preserving undo history.
+- Added visual unit selectors and constrained Flex/Grid controls.
+- Added keyboard-accessible layer ordering and RTL editor layout.
+- Added automatic version upgrades and translation loading.
+- Added editor interaction coverage to the browser test suite.
+
 ## 0.9.0
 
 - Added the production Theme Builder canvas and template resolution engine.
