@@ -21,13 +21,13 @@ final class Meta implements Service {
 				'public'       => false,
 				'show_ui'      => true,
 				'show_in_menu' => 'tools.php',
-				'supports'     => array( 'title', 'author' ),
+				'supports'     => array( 'title', 'author', 'editor' ),
 				'map_meta_cap' => true,
 				'capability_type' => 'post',
 			)
 		);
 		foreach ( get_post_types( array( 'show_ui' => true ) ) as $post_type ) {
-			if ( 'pagevia_template' === $post_type || ! post_type_supports( $post_type, 'editor' ) ) {
+			if ( ! post_type_supports( $post_type, 'editor' ) ) {
 				continue;
 			}
 			register_post_meta(
