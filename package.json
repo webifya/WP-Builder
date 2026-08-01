@@ -1,5 +1,5 @@
 {
-  "name": "wp-builder",
+  "name": "pagevia",
   "private": true,
   "scripts": {
     "check:js": "node --check assets/js/editor.js && node --check assets/js/frontend.js",
