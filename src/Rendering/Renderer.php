@@ -60,6 +60,11 @@ final class Renderer implements Service {
 				}
 			}
 			$style = '';
+			$custom = apply_filters( 'pagevia/render_element', '', $element, array( 'type' => $type, 'props' => $props, 'class' => $class, 'id' => $id, 'children' => $children ) );
+			if ( is_string( $custom ) && '' !== $custom ) {
+				$html .= $custom;
+				continue;
+			}
 			switch ( $type ) {
 				case 'heading':
 					$tag   = in_array( $props['tag'] ?? 'h2', array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ), true ) ? $props['tag'] : 'h2';
