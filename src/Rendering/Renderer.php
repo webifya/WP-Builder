@@ -1,7 +1,7 @@
 <?php
-namespace Webifya\WPBuilder\Rendering;
+namespace Webifya\Pagevia\Rendering;
 
-use Webifya\WPBuilder\Contracts\Service;
+use Webifya\Pagevia\Contracts\Service;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -15,21 +15,21 @@ final class Renderer implements Service {
 			return $content;
 		}
 		$post_id = get_the_ID();
-		if ( '1' !== get_post_meta( $post_id, '_wpb_enabled', true ) ) {
+		if ( '1' !== get_post_meta( $post_id, '_pagevia_enabled', true ) ) {
 			return $content;
 		}
-		$document = get_post_meta( $post_id, '_wpb_document', true );
+		$document = get_post_meta( $post_id, '_pagevia_document', true );
 		if ( ! is_array( $document ) ) {
 			return $content;
 		}
-		wp_enqueue_style( 'wp-builder' );
-		wp_enqueue_style( 'wp-builder-widgets' );
-		wp_enqueue_script( 'wp-builder-frontend' );
+		wp_enqueue_style( 'pagevia' );
+		wp_enqueue_style( 'pagevia-widgets' );
+		wp_enqueue_script( 'pagevia-frontend' );
 		$elements = (array) ( $document['elements'] ?? array() );
 		$css      = $this->responsive_css( $elements );
 		$tokens   = $this->design_tokens( (array) ( $document['settings'] ?? array() ) );
-		return ( $css ? '<style id="wpb-responsive-' . absint( $post_id ) . '">' . $css . '</style>' : '' )
-			. '<div class="wpb-page"' . $tokens . '>' . $this->elements( $elements ) . '</div>';
+		return ( $css ? '<style id="pagevia-responsive-' . absint( $post_id ) . '">' . $css . '</style>' : '' )
+			. '<div class="pagevia-page"' . $tokens . '>' . $this->elements( $elements ) . '</div>';
 	}
 
 	private function elements( array $elements ): string {
@@ -37,13 +37,14 @@ final class Renderer implements Service {
 		foreach ( $elements as $element ) {
 			$type     = sanitize_key( $element['type'] ?? '' );
 			$props    = (array) ( $element['props'] ?? array() );
+			$props    = $this->resolve_dynamic( $props );
 			$children = $this->elements( (array) ( $element['children'] ?? array() ) );
 			$props['text'] = $props['text'] ?? '';
 			$id            = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) ( $element['id'] ?? '' ) );
-			$class         = 'wpb-element wpb-' . $type . ( $id ? ' wpb-id-' . $id : '' );
+			$class         = 'pagevia-element pagevia-' . $type . ( $id ? ' pagevia-id-' . $id : '' );
 			foreach ( array( 'desktop', 'tablet', 'mobile' ) as $device ) {
 				if ( ! empty( $props[ 'hide_' . $device ] ) ) {
-					$class .= ' wpb-hide-' . $device;
+					$class .= ' pagevia-hide-' . $device;
 				}
 			}
 			$style = $this->style_attribute( (array) ( $element['styles']['desktop'] ?? array() ) );
@@ -63,7 +64,7 @@ final class Renderer implements Service {
 					$html .= $image;
 					break;
 				case 'button':
-					$html .= sprintf( '<a class="%s" href="%s"%s>%s</a>', esc_attr( $class ), esc_url( $props['url'] ?? '#' ), $style, esc_html( $props['text'] ?: __( 'Button', 'wp-builder' ) ) );
+					$html .= sprintf( '<a class="%s" href="%s"%s>%s</a>', esc_attr( $class ), esc_url( $props['url'] ?? '#' ), $style, esc_html( $props['text'] ?: __( 'Button', 'pagevia' ) ) );
 					break;
 				case 'video':
 					$html .= wp_video_shortcode( array( 'src' => esc_url_raw( $props['url'] ?? '' ) ) );
@@ -102,11 +103,11 @@ final class Renderer implements Service {
 					$html .= '</div>';
 					break;
 				case 'toggle':
-					$html .= '<details class="' . esc_attr( $class ) . '"' . $style . '><summary>' . esc_html( $props['title'] ?? __( 'More information', 'wp-builder' ) ) . '</summary><div>' . wp_kses_post( $props['text'] ) . '</div></details>';
+					$html .= '<details class="' . esc_attr( $class ) . '"' . $style . '><summary>' . esc_html( $props['title'] ?? __( 'More information', 'pagevia' ) ) . '</summary><div>' . wp_kses_post( $props['text'] ) . '</div></details>';
 					break;
 				case 'tabs':
-					$tabs_id = 'wpb-tabs-' . ( $id ?: wp_unique_id() );
-					$html   .= '<div class="' . esc_attr( $class ) . '" data-wpb-tabs' . $style . '><div role="tablist" aria-label="' . esc_attr__( 'Content tabs', 'wp-builder' ) . '">';
+					$tabs_id = 'pagevia-tabs-' . ( $id ?: wp_unique_id() );
+					$html   .= '<div class="' . esc_attr( $class ) . '" data-pagevia-tabs' . $style . '><div role="tablist" aria-label="' . esc_attr__( 'Content tabs', 'pagevia' ) . '">';
 					foreach ( (array) ( $props['items'] ?? array() ) as $index => $item ) {
 						$selected = 0 === $index;
 						$html .= sprintf(
@@ -131,12 +132,12 @@ final class Renderer implements Service {
 					$html .= '</div>';
 					break;
 				case 'counter':
-					$html .= '<span class="' . esc_attr( $class ) . '"' . $style . '><span class="wpb-counter-value">' . esc_html( $props['value'] ?? 0 ) . '</span>' . esc_html( $props['suffix'] ?? '' ) . '</span>';
+					$html .= '<span class="' . esc_attr( $class ) . '"' . $style . '><span class="pagevia-counter-value">' . esc_html( $props['value'] ?? 0 ) . '</span>' . esc_html( $props['suffix'] ?? '' ) . '</span>';
 					break;
 				case 'rating':
 					$value = min( 10, max( 0, (float) ( $props['value'] ?? 0 ) ) );
 					$max   = min( 10, max( 1, absint( $props['max'] ?? 5 ) ) );
-					$html .= sprintf( '<meter class="%s" min="0" max="%d" value="%s"%s aria-label="%s">%s/%d</meter>', esc_attr( $class ), $max, esc_attr( $value ), $style, esc_attr( sprintf( __( '%1$s out of %2$d stars', 'wp-builder' ), $value, $max ) ), esc_html( $value ), $max );
+					$html .= sprintf( '<meter class="%s" min="0" max="%d" value="%s"%s aria-label="%s">%s/%d</meter>', esc_attr( $class ), $max, esc_attr( $value ), $style, esc_attr( sprintf( __( '%1$s out of %2$d stars', 'pagevia' ), $value, $max ) ), esc_html( $value ), $max );
 					break;
 				case 'icon':
 					$html .= '<div class="' . esc_attr( $class ) . '"' . $style . '>' . esc_html( $props['text'] ) . '</div>';
@@ -154,7 +155,7 @@ final class Renderer implements Service {
 					$html .= '</div>';
 					break;
 				case 'social-icons':
-					$html .= '<nav class="' . esc_attr( $class ) . '" aria-label="' . esc_attr__( 'Social links', 'wp-builder' ) . '"' . $style . '>';
+					$html .= '<nav class="' . esc_attr( $class ) . '" aria-label="' . esc_attr__( 'Social links', 'pagevia' ) . '"' . $style . '>';
 					foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $props['links'] ?? '' ) ) as $link ) {
 						$parts = array_map( 'trim', explode( '|', $link, 2 ) );
 						if ( ! empty( $parts[1] ) ) {
@@ -174,6 +175,18 @@ final class Renderer implements Service {
 			}
 		}
 		return $html;
+	}
+
+	private function resolve_dynamic( array $props ): array {
+		foreach ( $props as $key => $value ) {
+			if ( is_array( $value ) ) $props[ $key ] = $this->resolve_dynamic( $value );
+			if ( is_string( $value ) ) {
+				$props[ $key ] = preg_replace_callback( '/\{\{\s*([a-z0-9_:-]+)\s*\}\}/i', static function ( array $match ): string {
+					return (string) apply_filters( 'pagevia/dynamic_value', $match[0], $match[1], array( 'post_id' => get_the_ID() ) );
+				}, $value );
+			}
+		}
+		return $props;
 	}
 
 	private function style_attribute( array $rules ): string {
@@ -224,10 +237,10 @@ final class Renderer implements Service {
 				$tablet_rules = $this->style_attribute( (array) ( $element['styles']['tablet'] ?? array() ) );
 				$mobile_rules = $this->style_attribute( (array) ( $element['styles']['mobile'] ?? array() ) );
 				if ( $tablet_rules ) {
-					$tablet .= '.wpb-id-' . $id . '{' . substr( $tablet_rules, 8, -1 ) . '}';
+					$tablet .= '.pagevia-id-' . $id . '{' . substr( $tablet_rules, 8, -1 ) . '}';
 				}
 				if ( $mobile_rules ) {
-					$mobile .= '.wpb-id-' . $id . '{' . substr( $mobile_rules, 8, -1 ) . '}';
+					$mobile .= '.pagevia-id-' . $id . '{' . substr( $mobile_rules, 8, -1 ) . '}';
 				}
 			}
 			$this->collect_responsive_css( (array) ( $element['children'] ?? array() ), $tablet, $mobile );
@@ -241,12 +254,12 @@ final class Renderer implements Service {
 		foreach ( array( 'primary', 'secondary', 'text', 'background' ) as $name ) {
 			$value = (string) ( $colors[ $name ] ?? '' );
 			if ( preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ) {
-				$rules[] = '--wpb-' . $name . ':' . $value;
+				$rules[] = '--pagevia-' . $name . ':' . $value;
 			}
 		}
 		$family = (string) ( $type['fontFamily'] ?? '' );
 		if ( $family && ! preg_match( '/[;{}]/', $family ) ) {
-			$rules[] = '--wpb-font-family:' . $family;
+			$rules[] = '--pagevia-font-family:' . $family;
 		}
 		return $rules ? ' style="' . esc_attr( implode( ';', $rules ) ) . '"' : '';
 	}
