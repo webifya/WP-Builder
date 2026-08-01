@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+
+- Rebranded all public identifiers, namespaces, assets, hooks and storage keys to Pagevia.
+- Added batched migration of legacy builder documents.
+- Connected rendered `{{dynamic_tag}}` placeholders to Pagevia Pro resolvers.
+- Added the official Pagevia Pro upgrade URL.
+
 ## 0.5.0
 
 - Completed the initial Free widget families: icon box, gallery, counter, rating and social links.
