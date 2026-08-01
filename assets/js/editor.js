@@ -27,7 +27,9 @@
 		dirty: false,
 		dragged: null,
 		clipboard: null,
-		recoveryTimer: null
+		recoveryTimer: null,
+		autosaveTimer: null,
+		changeId: 0
 	};
 	var shell, canvas, navigator, inspector, status;
 	var recoveryKey = 'pagevia-recovery-' + Pagevia.postId;
@@ -86,8 +88,10 @@
 		if (state.history.length > 75) state.history.shift();
 		state.future = [];
 		state.dirty = true;
+		state.changeId++;
 		updateStatus('Unsaved');
 		scheduleRecovery();
+		scheduleAutosave();
 	}
 
 	function mutate(callback) {
@@ -102,9 +106,11 @@
 		state.document = state.history.pop();
 		if (state.selected && !selected()) state.selected = null;
 		state.dirty = true;
+		state.changeId++;
 		render();
 		updateStatus('Unsaved');
 		scheduleRecovery();
+		scheduleAutosave();
 	}
 
 	function redo() {
@@ -112,9 +118,11 @@
 		state.history.push(clone(state.document));
 		state.document = state.future.pop();
 		state.dirty = true;
+		state.changeId++;
 		render();
 		updateStatus('Unsaved');
 		scheduleRecovery();
+		scheduleAutosave();
 	}
 
 	function add(type, parentId) {
@@ -149,6 +157,17 @@
 				reidentify(copy);
 				siblings.splice(index + 1, 0, copy);
 				state.selected = copy.id;
+			});
+		});
+	}
+
+	function moveLayer(elementId, delta) {
+		mutate(function () {
+			walk(state.document.elements, elementId, function (element, siblings, index) {
+				var destination = Math.max(0, Math.min(siblings.length - 1, index + delta));
+				if (destination === index) return;
+				siblings.splice(index, 1);
+				siblings.splice(destination, 0, element);
 			});
 		});
 	}
@@ -222,6 +241,11 @@
 				updateStatus('Local recovery unavailable');
 			}
 		}, 1200);
+	}
+
+	function scheduleAutosave() {
+		window.clearTimeout(state.autosaveTimer);
+		state.autosaveTimer = window.setTimeout(function () { if (state.dirty) save(true); }, 15000);
 	}
 
 	function showContextMenu(x, y) {
@@ -419,6 +443,7 @@
 		var node = el('button', className || 'pagevia-ui-button', label);
 		node.type = 'button';
 		node.title = title || label;
+		node.setAttribute('aria-label', title || label);
 		node.addEventListener('click', action);
 		return node;
 	}
@@ -459,7 +484,7 @@
 		actions.append(button('Export', exportTemplate));
 		actions.append(button('Import', importTemplate));
 		actions.append(button('Exit', exitEditor));
-		actions.append(button('Save', save, 'pagevia-ui-button pagevia-primary'));
+		actions.append(button('Save', function () { save(false); }, 'pagevia-ui-button pagevia-primary'));
 		buildLibrary();
 		shell.querySelectorAll('.pagevia-panel-tabs button').forEach(function (tab) {
 			tab.addEventListener('click', function () {
@@ -635,6 +660,28 @@
 		return wrap;
 	}
 
+	function selectField(label, value, options, change) {
+		var wrap = el('label', 'pagevia-field');
+		wrap.append(el('span', '', label));
+		var select = document.createElement('select');
+		options.forEach(function (item) { var option = el('option', '', item[1]); option.value = item[0]; option.selected = item[0] === value; select.append(option); });
+		select.addEventListener('change', function () { change(select.value); });
+		wrap.append(select);
+		return wrap;
+	}
+
+	function unitField(label, value, change) {
+		var match = String(value || '').match(/^(-?\d*\.?\d+)(px|%|em|rem|vh|vw)?$/);
+		var wrap = el('label', 'pagevia-field');
+		wrap.append(el('span', '', label));
+		var row = el('div', 'pagevia-unit-field');
+		var input = document.createElement('input'); input.type = 'number'; input.step = 'any'; input.value = match ? match[1] : '';
+		var unit = document.createElement('select');
+		['px', '%', 'em', 'rem', 'vh', 'vw'].forEach(function (name) { var option = el('option', '', name); option.value = name; option.selected = name === (match && match[2] || 'px'); unit.append(option); });
+		function update() { change(input.value === '' ? '' : input.value + unit.value); }
+		input.addEventListener('change', update); unit.addEventListener('change', update); row.append(input, unit); wrap.append(row); return wrap;
+	}
+
 	function itemsToText(items) {
 		return (items || []).map(function (item) {
 			return (item.title || '').replace(/\|/g, '/') + ' | ' + (item.content || '').replace(/\r?\n/g, ' ');
@@ -737,13 +784,9 @@
 		var styles = element.styles[state.device] || (element.styles[state.device] = {});
 		[
 			['color', 'Text color', 'color'], ['backgroundColor', 'Background', 'color'],
-			['fontSize', 'Font size', 'text'], ['padding', 'Padding', 'text'],
+			['padding', 'Padding', 'text'],
 			['margin', 'Margin', 'text'], ['borderRadius', 'Radius', 'text'],
-			['width', 'Width', 'text'], ['minHeight', 'Minimum height', 'text'],
-			['textAlign', 'Text alignment', 'text'], ['gap', 'Gap', 'text'],
-			['display', 'Layout mode (flex/grid)', 'text'], ['flexDirection', 'Flex direction', 'text'],
-			['flexWrap', 'Flex wrap', 'text'], ['justifyContent', 'Justify content', 'text'],
-			['alignItems', 'Align items', 'text'], ['gridTemplateColumns', 'Grid columns', 'text']
+			['gridTemplateColumns', 'Grid columns', 'text']
 		].forEach(function (setting) {
 			inspector.append(field(setting[1], styles[setting[0]] || '', function (value) {
 				mutate(function () {
@@ -752,6 +795,17 @@
 				});
 			}, setting[2]));
 		});
+		[['fontSize', 'Font size'], ['width', 'Width'], ['minHeight', 'Minimum height'], ['gap', 'Gap']].forEach(function (setting) {
+			inspector.append(unitField(setting[1], styles[setting[0]] || '', function (value) { mutate(function () { if (value) styles[setting[0]] = value; else delete styles[setting[0]]; }); }));
+		});
+		[
+			['display', 'Layout mode', [['', 'Default'], ['block', 'Block'], ['flex', 'Flex'], ['grid', 'Grid']]],
+			['flexDirection', 'Flex direction', [['', 'Default'], ['row', 'Row'], ['column', 'Column'], ['row-reverse', 'Row reverse'], ['column-reverse', 'Column reverse']]],
+			['flexWrap', 'Flex wrap', [['', 'Default'], ['nowrap', 'No wrap'], ['wrap', 'Wrap']]],
+			['justifyContent', 'Justify content', [['', 'Default'], ['flex-start', 'Start'], ['center', 'Center'], ['flex-end', 'End'], ['space-between', 'Space between'], ['space-around', 'Space around']]],
+			['alignItems', 'Align items', [['', 'Default'], ['stretch', 'Stretch'], ['flex-start', 'Start'], ['center', 'Center'], ['flex-end', 'End']]],
+			['textAlign', 'Text alignment', [['', 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right'], ['justify', 'Justify']]]
+		].forEach(function (setting) { inspector.append(selectField(setting[1], styles[setting[0]] || '', setting[2], function (value) { mutate(function () { if (value) styles[setting[0]] = value; else delete styles[setting[0]]; }); })); });
 		var visibility = el('label', 'pagevia-check');
 		var checkbox = document.createElement('input');
 		checkbox.type = 'checkbox';
@@ -804,7 +858,9 @@
 			render();
 		});
 		var fragment = document.createDocumentFragment();
-		fragment.append(item);
+		var layerRow = el('div', 'pagevia-layer-row');
+		layerRow.append(item, button('↑', function () { moveLayer(element.id, -1); }, 'pagevia-layer-move', 'Move layer up'), button('↓', function () { moveLayer(element.id, 1); }, 'pagevia-layer-move', 'Move layer down'));
+		fragment.append(layerRow);
 		(element.children || []).forEach(function (child) { fragment.append(navigatorItem(child, depth + 1)); });
 		return fragment;
 	}
@@ -825,25 +881,27 @@
 		if (status) status.textContent = message;
 	}
 
-	function save() {
+	function save(automatic) {
 		if (state.saving) return;
 		state.saving = true;
-		updateStatus('Saving…');
+		var savedChangeId = state.changeId;
+		var snapshot = clone(state.document);
+		updateStatus(automatic ? 'Autosaving…' : 'Saving…');
 		wp.apiFetch({
 			path: Pagevia.restPath + Pagevia.postId,
 			method: 'PUT',
-			data: { document: state.document }
+			data: { document: snapshot }
 		}).then(function (document) {
-			state.document = document;
-			state.history = [];
-			state.future = [];
-			state.dirty = false;
-			try { localStorage.removeItem(recoveryKey); } catch (error) {}
-			updateStatus('Saved');
-			render();
+			if (savedChangeId === state.changeId) {
+				state.document = document;
+				state.dirty = false;
+				try { localStorage.removeItem(recoveryKey); } catch (error) {}
+				updateStatus(automatic ? 'Autosaved' : 'Saved');
+				render();
+			} else updateStatus('Unsaved changes');
 		}).catch(function (error) {
 			updateStatus(error && error.message ? error.message : 'Save failed');
-		}).finally(function () { state.saving = false; });
+		}).finally(function () { state.saving = false; if (state.dirty) scheduleAutosave(); });
 	}
 
 	function exitEditor() {
@@ -857,7 +915,7 @@
 		var modifier = event.ctrlKey || event.metaKey;
 		if (modifier && event.key.toLowerCase() === 's') {
 			event.preventDefault();
-			save();
+			save(false);
 		} else if (modifier && event.key.toLowerCase() === 'z') {
 			event.preventDefault();
 			event.shiftKey ? redo() : undo();
