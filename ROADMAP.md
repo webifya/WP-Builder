@@ -47,6 +47,17 @@ The feature catalog is a product program, not a single release. Shipping order i
 - PHPCS, PHPStan, PHPUnit and Plugin Check with zero-error gates
 - Performance budgets, localization extraction and formal accessibility audit
 
+## 0.8 — Pagevia rebrand (completed)
+
+- Renamed public APIs, assets, storage and packages with bounded legacy migration
+- Connected Free rendering to licensed Pro dynamic tags
+
+## 0.9 — Production Theme Builder API (completed)
+
+- Exposed reusable document rendering for Pro theme locations
+- Enabled visual editing for saved theme templates
+- Added dynamic-tag insertion configuration
+
 ## 1.0 — Stable free release
 
 All advertised Free features implemented, documented, tested, and migration-safe.
