@@ -75,6 +75,11 @@ All advertised Free features implemented, documented, tested, and migration-safe
 - Filtered server-rendering contract for optional commerce widgets
 - No WooCommerce dependency in the Free plugin
 
+## 1.3 — Popups and marketing extension support (completed)
+
+- Pro marketing widgets use the public editor and renderer extension contracts
+- Clean, non-recursive release packaging and distribution-level Plugin Check
+
 ## Pro sequence
 
 1. Theme Builder and dynamic tags

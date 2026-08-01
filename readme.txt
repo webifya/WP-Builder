@@ -3,10 +3,10 @@ Contributors: webifya
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 
-A theme-friendly visual builder for WordPress content.
+A theme-friendly visual builder for WordPress content by Mahfuzar Rahman.
 
 == Description ==
 
@@ -29,6 +29,11 @@ Free pages render through the active theme's normal content pipeline. Pagevia Pr
 No. Pagevia preserves documents by default to prevent accidental data loss.
 
 == Changelog ==
+
+= 1.3.0 =
+* Added the marketing-widget extension foundation used by Pagevia Pro.
+* Fixed recursive release packaging and run Plugin Check against a clean distribution.
+* Added official Mahfuzar Rahman and Web Ninja LLC branding.
 
 = 1.2.0 =
 * Added a public extension API for third-party editor widgets, defaults and controls.

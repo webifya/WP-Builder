@@ -6,4 +6,5 @@
 /package.json
 /package-lock.json
 /work
+/build
 /.DS_Store

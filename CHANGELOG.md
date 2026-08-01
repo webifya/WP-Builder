@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0
+
+- Fixed recursive GitHub release packaging by staging distributions outside the repository.
+- Changed Plugin Check to validate the clean distributable plugin instead of development files.
+- Added workflow concurrency protection and official author, plugin, and company URLs.
+
 ## 1.2.0
 
 - Added extensible editor widget types, default properties, and inspector controls.
