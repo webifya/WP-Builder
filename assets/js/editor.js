@@ -721,6 +721,17 @@
 		}
 		if (element.type === 'html') prop('html', 'HTML', 'textarea');
 		if (element.type === 'shortcode') prop('code', 'Shortcode', 'text');
+		if (Pagevia.dynamicTags && Pagevia.dynamicTags.length) {
+			var tagRow = el('div', 'pagevia-dynamic-tags');
+			var tagSelect = document.createElement('select');
+			Pagevia.dynamicTags.forEach(function (tag) { var option = el('option', '', tag); option.value = tag; tagSelect.append(option); });
+			tagRow.append(tagSelect, button('Insert dynamic tag', function () {
+				var property = Object.keys(element.props).find(function (key) { return typeof element.props[key] === 'string' && key !== 'tag'; });
+				if (!property) return updateStatus('This element has no compatible text field');
+				mutate(function () { element.props[property] = (element.props[property] || '') + '{{' + tagSelect.value + '}}'; });
+			}, 'pagevia-ui-button'));
+			inspector.append(el('h3', '', 'Dynamic content'), tagRow);
+		}
 
 		inspector.append(el('h3', '', 'Style · ' + state.device));
 		var styles = element.styles[state.device] || (element.styles[state.device] = {});
