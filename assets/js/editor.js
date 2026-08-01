@@ -519,8 +519,9 @@
 	}
 
 	function applyStyles(node, element) {
-		var rules = Object.assign({}, (element.styles || {}).desktop || {});
-		if (state.device !== 'desktop') Object.assign(rules, (element.styles || {})[state.device] || {});
+		var globalStyles = ((state.document.settings || {}).widgetStyles || {})[element.type] || {};
+		var rules = Object.assign({}, globalStyles.desktop || {}, (element.styles || {}).desktop || {});
+		if (state.device !== 'desktop') Object.assign(rules, globalStyles[state.device] || {}, (element.styles || {})[state.device] || {});
 		Object.keys(rules).forEach(function (property) {
 			if (/^[a-zA-Z]+$/.test(property)) node.style[property] = rules[property];
 		});
@@ -633,6 +634,10 @@
 		canvas.style.setProperty('--pagevia-text', colors.text || '#101828');
 		canvas.style.setProperty('--pagevia-background', colors.background || '#ffffff');
 		canvas.style.fontFamily = (settings.typography || {}).fontFamily || '';
+		Object.keys(settings.spacing || {}).forEach(function (name) { canvas.style.setProperty('--pagevia-space-' + name, settings.spacing[name]); });
+		Object.keys(settings.variables || {}).forEach(function (name) { canvas.style.setProperty('--pagevia-' + name.replace(/[^a-z0-9-]/gi, '-').toLowerCase(), settings.variables[name]); });
+		var breakpoints = settings.breakpoints || {};
+		canvas.style.maxWidth = state.device === 'tablet' ? (breakpoints.tablet || 1024) + 'px' : state.device === 'mobile' ? (breakpoints.mobile || 767) + 'px' : '';
 		if (!state.document.elements.length) {
 			var empty = el('div', 'pagevia-empty-state');
 			empty.append(el('h2', '', 'Start building'));
@@ -768,6 +773,7 @@
 		}
 		if (element.type === 'html') prop('html', 'HTML', 'textarea');
 		if (element.type === 'shortcode') prop('code', 'Shortcode', 'text');
+		prop('cssClasses', 'CSS classes', 'text');
 		if (Pagevia.dynamicTags && Pagevia.dynamicTags.length) {
 			var tagRow = el('div', 'pagevia-dynamic-tags');
 			var tagSelect = document.createElement('select');
@@ -815,6 +821,30 @@
 		});
 		visibility.append(checkbox, el('span', '', 'Hide on ' + state.device));
 		inspector.append(visibility);
+		state.document.settings = state.document.settings || {};
+		state.document.settings.widgetStyles = state.document.settings.widgetStyles || {};
+		state.document.settings.presets = state.document.settings.presets || {};
+		inspector.append(el('h3', '', 'Reusable styles'));
+		inspector.append(button('Set as global ' + element.type + ' style', function () {
+			mutate(function () { state.document.settings.widgetStyles[element.type] = clone(element.styles); });
+		}, 'pagevia-ui-button pagevia-wide'));
+		if (state.document.settings.widgetStyles[element.type]) inspector.append(button('Clear global ' + element.type + ' style', function () {
+			mutate(function () { delete state.document.settings.widgetStyles[element.type]; });
+		}, 'pagevia-ui-button pagevia-wide'));
+		var presetNames = Object.keys(state.document.settings.presets);
+		if (presetNames.length) {
+			var presetSelect = document.createElement('select');
+			presetSelect.className = 'pagevia-preset-select';
+			presetNames.forEach(function (name) { var option = el('option', '', name); option.value = name; presetSelect.append(option); });
+			var presetRow = el('div', 'pagevia-preset-row');
+			presetRow.append(presetSelect, button('Apply', function () { mutate(function () { element.styles = clone(state.document.settings.presets[presetSelect.value]); }); }, 'pagevia-ui-button'));
+			inspector.append(presetRow);
+		}
+		inspector.append(button('Save style preset', function () {
+			var name = window.prompt('Preset name');
+			if (!name || !name.trim()) return;
+			mutate(function () { state.document.settings.presets[name.trim().slice(0, 60)] = clone(element.styles); });
+		}, 'pagevia-ui-button pagevia-wide'));
 		var row = el('div', 'pagevia-inspector-actions');
 		row.append(button('Duplicate', duplicateSelected), button('Delete', removeSelected, 'pagevia-ui-button pagevia-danger'));
 		inspector.append(row);
@@ -829,6 +859,9 @@
 			background: '#ffffff'
 		};
 		state.document.settings.typography = state.document.settings.typography || { fontFamily: '' };
+		state.document.settings.breakpoints = state.document.settings.breakpoints || { tablet: 1024, mobile: 767 };
+		state.document.settings.spacing = state.document.settings.spacing || { xs: '4px', sm: '8px', md: '16px', lg: '32px', xl: '64px' };
+		state.document.settings.variables = state.document.settings.variables || {};
 		inspector.append(el('h2', '', 'Global design'));
 		inspector.append(el('p', 'pagevia-panel-empty', 'These tokens apply across the page and can be reused by widgets.'));
 		[
@@ -844,9 +877,39 @@
 		inspector.append(field('Font family', state.document.settings.typography.fontFamily, function (value) {
 			mutate(function () { state.document.settings.typography.fontFamily = value; });
 		}, 'text'));
+		inspector.append(el('h3', '', 'Responsive breakpoints'));
+		[['tablet', 'Tablet maximum (px)'], ['mobile', 'Mobile maximum (px)']].forEach(function (setting) {
+			inspector.append(field(setting[1], state.document.settings.breakpoints[setting[0]], function (value) {
+				mutate(function () { state.document.settings.breakpoints[setting[0]] = Math.max(setting[0] === 'tablet' ? 600 : 320, parseInt(value, 10) || (setting[0] === 'tablet' ? 1024 : 767)); });
+			}, 'number'));
+		});
+		inspector.append(el('h3', '', 'Spacing scale'));
+		[['xs', 'Extra small'], ['sm', 'Small'], ['md', 'Medium'], ['lg', 'Large'], ['xl', 'Extra large']].forEach(function (setting) {
+			inspector.append(field(setting[1], state.document.settings.spacing[setting[0]], function (value) { mutate(function () { state.document.settings.spacing[setting[0]] = value; }); }, 'text'));
+		});
+		inspector.append(el('h3', '', 'Custom variables'));
+		inspector.append(field('One “name | value” per line', variablesToText(state.document.settings.variables), function (value) {
+			mutate(function () { state.document.settings.variables = textToVariables(value); });
+		}, 'textarea'));
 		inspector.append(el('h3', '', 'Page templates'));
 		inspector.append(button('Export this page', exportTemplate, 'pagevia-ui-button pagevia-wide'));
 		inspector.append(button('Import a page', importTemplate, 'pagevia-ui-button pagevia-wide'));
+	}
+
+	function variablesToText(variables) {
+		return Object.keys(variables || {}).map(function (name) { return name + ' | ' + variables[name]; }).join('\n');
+	}
+
+	function textToVariables(value) {
+		var variables = {};
+		value.split(/\r?\n/).forEach(function (line) {
+			var split = line.indexOf('|');
+			if (split < 1) return;
+			var name = line.slice(0, split).trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+			var token = line.slice(split + 1).trim();
+			if (name && token && !/[;{}<>]|url\s*\(/i.test(token)) variables[name] = token;
+		});
+		return variables;
 	}
 
 	function navigatorItem(element, depth) {
