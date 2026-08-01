@@ -11,4 +11,5 @@
 .pagevia-template{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 0;border-bottom:1px solid var(--pagevia-border,#d8dce5)}
 .pagevia-template strong,.pagevia-template span{display:block}.pagevia-template span{color:#667085;font-size:12px}.pagevia-template-actions{display:flex;gap:4px}
 .pagevia-interactive-preview{display:grid;gap:3px;padding:10px;border-bottom:1px solid var(--pagevia-border,#d8dce5)}.pagevia-interactive-preview span{color:#667085}
+.pagevia-dynamic-tags{display:grid;grid-template-columns:1fr auto;gap:6px}.pagevia-dynamic-tags select{min-width:0}
 @media(max-width:1180px){.pagevia-toolbar{gap:7px}.pagevia-actions .pagevia-ui-button{padding-inline:7px}}
